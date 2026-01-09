@@ -84,9 +84,9 @@ function findMatchingEvent(events: PolymarketEvent[], keywords: string[]): Polym
     const descLower = (event.description || '').toLowerCase();
     const searchText = `${titleLower} ${descLower}`;
     
-    // Check if any keyword matches
-    const matches = lowerKeywords.filter(kw => searchText.includes(kw));
-    if (matches.length >= 1) {
+    // Check if ALL keywords match (more precise matching)
+    const allMatch = lowerKeywords.every(kw => searchText.includes(kw));
+    if (allMatch) {
       return event;
     }
   }
@@ -264,7 +264,7 @@ const RISK_CONFIGS: RiskConfig[] = [
     name: 'Recessão nos EUA',
     category: 'Geopolítica',
     riskDescription: 'Risco de Recessão Americana',
-    polymarketKeywords: ['negative gdp'],
+    polymarketKeywords: ['negative', 'gdp', 'growth'],
     trendsKeyword: 'US recession 2025',
     // YES = recessão acontece = risco direto
   },
@@ -277,8 +277,8 @@ const RISK_CONFIGS: RiskConfig[] = [
     name: 'Conflito Rússia-Ucrânia',
     category: 'Geopolítica',
     riskDescription: 'Guerra na Europa Oriental',
-    polymarketKeywords: ['ceasefire', '2026'],
-    trendsKeyword: 'ukraine war tourism europe',
+    polymarketKeywords: ['russia', 'ukraine', 'ceasefire'],
+    trendsKeyword: 'ukraine war travel europe',
     invertProbability: true // Ceasefire = bom, inverte para mostrar risco de guerra
   },
   
@@ -290,19 +290,20 @@ const RISK_CONFIGS: RiskConfig[] = [
     category: 'Geopolítica',
     riskDescription: 'Risco Geopolítico na Ásia',
     polymarketKeywords: ['china', 'invade', 'taiwan'],
-    trendsKeyword: 'china taiwan travel risk',
+    trendsKeyword: 'china taiwan conflict',
     // YES = invasão = risco direto
   },
   
   // CÂMBIO - Inflação Brasil
   // Evento: "Brazil's 12-month inflation below 5.50%?" → Yes = 99.85%
   // Alta chance de ficar ABAIXO = BAIXO risco de inflação
+  // invertProbability: YES = inflação baixa (bom) → inverte para mostrar RISCO de inflação alta
   {
     id: 'brazil-inflation',
     name: 'Inflação Brasil',
     category: 'Câmbio',
     riskDescription: 'Pressão Inflacionária no Brasil',
-    polymarketKeywords: ['brazil', 'inflation', '5.50'],
+    polymarketKeywords: ['brazil', 'inflation', 'below'],
     trendsKeyword: 'inflacao brasil turismo',
     invertProbability: true // "Below X" YES = bom, inverte para mostrar risco
   },
@@ -326,19 +327,19 @@ const RISK_CONFIGS: RiskConfig[] = [
     name: 'Clima Extremo 2025',
     category: 'Clima',
     riskDescription: 'Eventos Climáticos Extremos',
-    polymarketKeywords: ['hottest year'],
+    polymarketKeywords: ['hottest', 'year', 'record'],
     trendsKeyword: 'extreme weather tourism',
     // YES = risco climático direto
   },
   
   // GEOPOLÍTICA - Instabilidade Europa
-  // Eventos: "Macron out by...?", "Starmer out by...?"
+  // Eventos: "Macron out by...?"
   {
     id: 'europe-political',
     name: 'Crise Política Europa',
     category: 'Geopolítica',
     riskDescription: 'Instabilidade na Europa',
-    polymarketKeywords: ['macron out', 'starmer out'],
+    polymarketKeywords: ['macron', 'out'],
     trendsKeyword: 'europe political crisis',
     // YES = crise política = risco
   },
@@ -349,9 +350,9 @@ const RISK_CONFIGS: RiskConfig[] = [
     name: 'Custos de Combustível',
     category: 'Custo Aéreo',
     riskDescription: 'Alta do Querosene de Aviação',
-    polymarketKeywords: ['oil', 'energy crisis', 'fuel'],
+    polymarketKeywords: ['oil', 'price', 'barrel'], // Provavelmente não vai encontrar
     trendsKeyword: 'jet fuel prices',
-    // Trends-based principalmente
+    // Trends-based principalmente (Polymarket não tem eventos de petróleo)
   },
 ];
 

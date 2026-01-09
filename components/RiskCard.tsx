@@ -12,6 +12,63 @@ interface RiskCardProps {
   onInfoClick: (title: string, content: string) => void;
 }
 
+// Generate detailed info content for the popup
+function generateInfoContent(metric: RiskMetric, lang: Language): string {
+  const trendText = {
+    pt: { up: 'Alta', down: 'Baixa', stable: 'Estável' },
+    en: { up: 'Rising', down: 'Falling', stable: 'Stable' },
+    es: { up: 'Alta', down: 'Baja', stable: 'Estable' }
+  };
+
+  const riskLevel = metric.probability > 70 ? 
+    (lang === 'pt' ? 'ALTO' : lang === 'es' ? 'ALTO' : 'HIGH') :
+    metric.probability >= 30 ? 
+    (lang === 'pt' ? 'MÉDIO' : lang === 'es' ? 'MEDIO' : 'MEDIUM') :
+    (lang === 'pt' ? 'BAIXO' : lang === 'es' ? 'BAJO' : 'LOW');
+
+  if (lang === 'pt') {
+    return `⚠️ IMPORTANTE: Este é um INDICADOR DE PROBABILIDADE, não um fato consumado.
+
+📊 Probabilidade atual: ${metric.probability}%
+📈 Tendência: ${trendText.pt[metric.trend]}
+🎯 Nível de risco: ${riskLevel}
+
+📡 FONTE DOS DADOS:
+• Polymarket: Mercado de previsões onde pessoas apostam dinheiro real em eventos futuros. A probabilidade reflete o consenso do mercado.
+• Google Trends: Volume de buscas relacionadas ao tema nos últimos 30 dias.
+
+💡 COMO INTERPRETAR:
+• Probabilidade ALTA (>70%): O mercado acredita que este evento tem alta chance de ocorrer.
+• Probabilidade BAIXA (<30%): O mercado considera improvável.
+
+🔄 Dados atualizados em tempo real das APIs.`;
+  } else if (lang === 'es') {
+    return `⚠️ IMPORTANTE: Este es un INDICADOR DE PROBABILIDAD, no un hecho consumado.
+
+📊 Probabilidad actual: ${metric.probability}%
+📈 Tendencia: ${trendText.es[metric.trend]}
+🎯 Nivel de riesgo: ${riskLevel}
+
+📡 FUENTE DE DATOS:
+• Polymarket: Mercado de predicciones donde personas apuestan dinero real.
+• Google Trends: Volumen de búsquedas en los últimos 30 días.
+
+🔄 Datos actualizados en tiempo real.`;
+  } else {
+    return `⚠️ IMPORTANT: This is a PROBABILITY INDICATOR, not a confirmed fact.
+
+📊 Current probability: ${metric.probability}%
+📈 Trend: ${trendText.en[metric.trend]}
+🎯 Risk level: ${riskLevel}
+
+📡 DATA SOURCES:
+• Polymarket: Prediction market where people bet real money on future events.
+• Google Trends: Search volume for related terms over the last 30 days.
+
+🔄 Data updated in real-time from APIs.`;
+  }
+}
+
 const RiskCard: React.FC<RiskCardProps> = ({ metric, lang, onInfoClick }) => {
   const t = translations[lang];
   const isHigh = metric.probability > 70;
@@ -54,7 +111,7 @@ const RiskCard: React.FC<RiskCardProps> = ({ metric, lang, onInfoClick }) => {
           </span>
           <h3 className="text-lg font-semibold text-white flex items-center gap-2">
             {metric.riskDescription}
-            <button onClick={() => onInfoClick(metric.riskDescription, `Indicador de risco para o setor de turismo. Probabilidade atual: ${metric.probability}%. Tendência: ${metric.trend === 'up' ? 'Alta' : metric.trend === 'down' ? 'Baixa' : 'Estável'}.`)}>
+            <button onClick={() => onInfoClick(metric.riskDescription, generateInfoContent(metric, lang))}>
               <Info className="w-4 h-4 text-slate-500 hover:text-cyan-400 cursor-help transition-colors" />
             </button>
           </h3>
