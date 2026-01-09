@@ -1,6 +1,65 @@
 
 export type Language = 'pt' | 'en' | 'es';
 
+// Traduções para categorias
+export const categoryTranslations = {
+  pt: {
+    'Geopolítica': 'Geopolítica',
+    'Câmbio': 'Câmbio',
+    'Clima': 'Clima',
+    'Custo Aéreo': 'Custo Aéreo',
+    'Saúde Global': 'Saúde Global'
+  },
+  en: {
+    'Geopolítica': 'Geopolitics',
+    'Câmbio': 'Currency',
+    'Clima': 'Climate',
+    'Custo Aéreo': 'Air Costs',
+    'Saúde Global': 'Global Health'
+  },
+  es: {
+    'Geopolítica': 'Geopolítica',
+    'Câmbio': 'Cambio',
+    'Clima': 'Clima',
+    'Custo Aéreo': 'Costo Aéreo',
+    'Saúde Global': 'Salud Global'
+  }
+};
+
+// Traduções para descrições de risco
+export const riskDescTranslations = {
+  pt: {
+    'Risco de Recessão Americana': 'Risco de Recessão Americana',
+    'Guerra na Europa Oriental': 'Guerra na Europa Oriental',
+    'Risco Geopolítico na Ásia': 'Risco Geopolítico na Ásia',
+    'Pressão Inflacionária no Brasil': 'Pressão Inflacionária no Brasil',
+    'Inflação Alta nos EUA': 'Inflação Alta nos EUA',
+    'Eventos Climáticos Extremos': 'Eventos Climáticos Extremos',
+    'Instabilidade na Europa': 'Instabilidade na Europa',
+    'Alta do Querosene de Aviação': 'Alta do Querosene de Aviação'
+  },
+  en: {
+    'Risco de Recessão Americana': 'US Recession Risk',
+    'Guerra na Europa Oriental': 'War in Eastern Europe',
+    'Risco Geopolítico na Ásia': 'Geopolitical Risk in Asia',
+    'Pressão Inflacionária no Brasil': 'Brazil Inflation Pressure',
+    'Inflação Alta nos EUA': 'High US Inflation',
+    'Eventos Climáticos Extremos': 'Extreme Weather Events',
+    'Instabilidade na Europa': 'Europe Instability',
+    'Alta do Querosene de Aviação': 'Jet Fuel Price Rise'
+  },
+  es: {
+    'Risco de Recessão Americana': 'Riesgo de Recesión en EE.UU.',
+    'Guerra na Europa Oriental': 'Guerra en Europa Oriental',
+    'Risco Geopolítico na Ásia': 'Riesgo Geopolítico en Asia',
+    'Pressão Inflacionária no Brasil': 'Presión Inflacionaria en Brasil',
+    'Inflação Alta nos EUA': 'Alta Inflación en EE.UU.',
+    'Eventos Climáticos Extremos': 'Eventos Climáticos Extremos',
+    'Instabilidade na Europa': 'Inestabilidad en Europa',
+    'Alta do Querosene de Aviação': 'Alza del Combustible Aéreo'
+  }
+};
+
 export const translations = {
   pt: {
     radar: "RADAR",

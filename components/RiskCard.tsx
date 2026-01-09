@@ -4,7 +4,7 @@ import { AreaChart, Area, XAxis, YAxis, ResponsiveContainer, Tooltip } from 'rec
 import { TrendingUp, TrendingDown, Minus, Info, Zap, AlertTriangle, ShieldCheck } from 'lucide-react';
 import { RiskMetric } from '../types';
 import { COLORS } from '../constants';
-import { Language, translations } from '../translations';
+import { Language, translations, categoryTranslations, riskDescTranslations } from '../translations';
 
 interface RiskCardProps {
   metric: RiskMetric;
@@ -74,6 +74,10 @@ const RiskCard: React.FC<RiskCardProps> = ({ metric, lang, onInfoClick }) => {
   const isHigh = metric.probability > 70;
   const isMid = metric.probability >= 30 && metric.probability <= 70;
   const statusColor = isHigh ? COLORS.riskHigh : isMid ? COLORS.riskMid : COLORS.riskLow;
+  
+  // Translate category and risk description
+  const translatedCategory = categoryTranslations[lang][metric.category as keyof typeof categoryTranslations['pt']] || metric.category;
+  const translatedRiskDesc = riskDescTranslations[lang][metric.riskDescription as keyof typeof riskDescTranslations['pt']] || metric.riskDescription;
 
   const TrendIcon = () => {
     switch (metric.trend) {
@@ -107,11 +111,11 @@ const RiskCard: React.FC<RiskCardProps> = ({ metric, lang, onInfoClick }) => {
       <div className="flex justify-between items-start">
         <div>
           <span className="text-[10px] uppercase tracking-widest text-slate-400 font-bold mb-1 block">
-            {metric.category}
+            {translatedCategory}
           </span>
           <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-            {metric.riskDescription}
-            <button onClick={() => onInfoClick(metric.riskDescription, generateInfoContent(metric, lang))}>
+            {translatedRiskDesc}
+            <button onClick={() => onInfoClick(translatedRiskDesc, generateInfoContent(metric, lang))}>
               <Info className="w-4 h-4 text-slate-500 hover:text-cyan-400 cursor-help transition-colors" />
             </button>
           </h3>
