@@ -17,69 +17,79 @@ O Konzup Radar é uma ferramenta de **inteligência preditiva** desenhada para p
 - **Hotéis e Resorts** - Ajustar estratégias baseado em demanda projetada
 - **DMCs e Receptivos** - Preparar-se para variações de fluxo turístico
 
-### Riscos Monitorados
+### ⚠️ IMPORTANTE: Probabilidades, Não Fatos
 
-| Categoria | Exemplos |
-|-----------|----------|
-| **Geopolítica** | Recessão EUA, Conflitos (Ucrânia, China-Taiwan), Instabilidade Europa |
-| **Câmbio** | Inflação Brasil, Inflação EUA |
-| **Clima** | Eventos climáticos extremos |
-| **Custo Aéreo** | Preços de combustível de aviação |
+Os dados exibidos são **PROBABILIDADES** baseadas em mercados de previsão e tendências de busca, **NÃO são fatos consumados**. Eles representam o consenso do mercado sobre eventos futuros.
+
+---
+
+## 🎯 Riscos Monitorados (8 Métricas)
+
+| Categoria | Métrica | Fonte Polymarket | Interpretação |
+|-----------|---------|------------------|---------------|
+| **Geopolítica** | Recessão EUA | "Negative GDP growth in 2025?" | YES = risco direto |
+| **Geopolítica** | Guerra Ucrânia | "Russia x Ukraine ceasefire..." | YES = bom → **invertido** |
+| **Geopolítica** | China-Taiwan | "Will China invade Taiwan...?" | YES = risco direto |
+| **Geopolítica** | Crise Europa | "Macron out by...?" | YES = risco direto |
+| **Câmbio** | Inflação Brasil | "Brazil inflation below 5.5%?" | YES = bom → **invertido** |
+| **Câmbio** | Inflação EUA | "Will inflation reach 5%...?" | YES = risco direto |
+| **Clima** | Clima Extremo | "Will 2025 be hottest year?" | YES = risco direto |
+| **Custo Aéreo** | Combustível | Google Trends "jet fuel prices" | Trends-based |
+
+### Lógica de Inversão
+
+Alguns eventos no Polymarket são formulados de forma que **YES = bom**:
+- "Inflação abaixo de 5.5%?" → YES significa inflação controlada (bom!)
+- "Cessar-fogo na Ucrânia?" → YES significa paz (bom!)
+
+Nesses casos, **invertemos** a probabilidade para mostrar o RISCO:
+```
+Risco = 100% - Probabilidade_YES
+```
+
+**Exemplo Brasil:**
+- Polymarket: 99.85% chance de inflação ficar ABAIXO de 5.5%
+- Inversão: 100 - 99.85 = **0.15% risco** de inflação alta
+- Dashboard mostra: ~0% (verde, baixo risco) ✅
 
 ---
 
 ## 🧮 O Algoritmo: Como Funciona
 
-O Konzup Radar cruza **duas fontes de dados poderosas** para gerar probabilidades de risco:
+O Konzup Radar cruza **duas fontes de dados** para gerar probabilidades de risco:
 
-### Fórmula Simplificada
+### Fórmula
 
 ```
-Risco Final = Probabilidade Polymarket (70%) + Índice Google Trends (30%)
+Risco Final = Probabilidade Polymarket (primária) + Google Trends (histórico)
 ```
 
 ### Fontes de Dados
 
-#### 1. Polymarket (Peso 70%) - "A Aposta do Mercado"
+#### 1. Polymarket - "A Aposta do Mercado"
 
 **O que é:** Plataforma de mercados de previsão onde pessoas apostam dinheiro real em eventos futuros.
 
-**Por que funciona:** O dinheiro real torna as probabilidades mais robustas - pessoas não apostam em algo que não acreditam.
+**Por que funciona:** O dinheiro real torna as probabilidades mais robustas.
 
-**Como usamos:** Extraímos a probabilidade "YES" de eventos relevantes:
-- `"Negative GDP growth in 2025?"` → 1.8% YES = baixo risco de recessão
-- `"Russia x Ukraine ceasefire by 2026?"` → 44.5% YES → invertemos → 55.5% risco de guerra
-- `"Brazil inflation below 5.5%?"` → 99.85% YES → invertemos → 0.15% risco de inflação alta
-
-**API:** `https://gamma-api.polymarket.com/events` (gratuita, sem chave necessária)
-
-#### 2. Google Trends (Peso 30%) - "A Intenção de Busca"
-
-**O que é:** Volume de buscas no Google por termos específicos (índice 0-100).
-
-**Por que funciona:** Reflete preocupação e interesse público. Um pico em "passagem aérea cara" pode indicar problema antes dos números oficiais.
-
-**Como usamos:** Crawler Python (`pytrends`) que coleta dados dos últimos 30 dias para cada termo de risco.
-
-**Crawler:** `scripts/googleTrends.py` usando biblioteca `pytrends==4.9.2`
-
-### Exemplo Prático
-
+**Formato da API:**
+```json
+{
+  "title": "Negative GDP growth in 2025?",
+  "outcomes": ["Yes", "No"],
+  "outcomePrices": ["0.018", "0.982"]  // 1.8% YES, 98.2% NO
+}
 ```
-Cenário: Operadora de turismo avaliando riscos para Europa
 
-Polymarket diz:
-  "Russia x Ukraine ceasefire by end of 2026?" → 44.5% SIM
-  Invertendo: 55.5% chance de guerra continuar
+**API:** `https://gamma-api.polymarket.com/events` (gratuita, sem chave)
 
-Google Trends mostra:
-  "ukraine war europe travel" → Índice 45 (elevado)
+#### 2. Google Trends - "A Intenção de Busca"
 
-Resultado Konzup Radar:
-  Risco = (55.5 × 0.7) + (45 × 0.3) = 38.85% + 13.5% = 52.35%
-  
-Interpretação: Risco MÉDIO-ALTO para operações na Europa Oriental
-```
+**O que é:** Volume de buscas no Google (índice 0-100) nos últimos 30 dias.
+
+**Como usamos:** Crawler Python (`pytrends`) que coleta dados históricos para cada termo de risco.
+
+**Crawler:** `scripts/googleTrends.py`
 
 ---
 
@@ -88,7 +98,7 @@ Interpretação: Risco MÉDIO-ALTO para operações na Europa Oriental
 ### Stack
 
 - **Frontend:** React 19 + TypeScript + Tailwind CSS
-- **Backend:** Node.js (Express) - Proxy para APIs
+- **Backend:** Node.js (Express 5) - Proxy para APIs
 - **Crawler:** Python 3 (pytrends) - Google Trends
 - **AI:** Google Gemini 2.0 Flash - Insights em linguagem natural
 - **Deploy:** Google Cloud Run
@@ -100,7 +110,8 @@ Interpretação: Risco MÉDIO-ALTO para operações na Europa Oriental
 konzup-radar/
 ├── App.tsx                 # Componente principal React
 ├── components/
-│   └── RiskCard.tsx        # Card de risco individual
+│   ├── RiskCard.tsx        # Card de risco individual
+│   └── InfoModal.tsx       # Modal de informações
 ├── services/
 │   ├── dataService.ts      # Integração Polymarket + Trends
 │   └── geminiService.ts    # Integração Gemini AI
@@ -108,7 +119,8 @@ konzup-radar/
 │   └── googleTrends.py     # Crawler Python para Trends
 ├── server.js               # Backend Express (proxy + API)
 ├── Dockerfile              # Container para Cloud Run
-└── translations.ts         # i18n (PT/EN/ES)
+├── translations.ts         # i18n (PT/EN/ES)
+└── types.ts                # TypeScript interfaces
 ```
 
 ### Fluxo de Dados
@@ -192,14 +204,6 @@ gcloud run deploy konzup-radar \
   --set-env-vars "NODE_ENV=production,GEMINI_API_KEY=sua_chave"
 ```
 
-### Via Cloud Build
-
-```bash
-# Usando cloudbuild.yaml
-gcloud builds submit --config cloudbuild.yaml \
-  --substitutions=_GEMINI_API_KEY=sua_chave
-```
-
 ---
 
 ## 📡 Endpoints da API
@@ -216,39 +220,52 @@ gcloud builds submit --config cloudbuild.yaml \
 
 ## 🔐 Segurança
 
-- **GEMINI_API_KEY** nunca é exposta no frontend - todas as chamadas passam pelo backend
+- **GEMINI_API_KEY** nunca é exposta no frontend
 - **Input sanitization** no endpoint de Trends (previne command injection)
+- **spawn()** usado em vez de exec() para execução segura de Python
 - **CORS** configurado para ambiente de produção
 - **LGPD compliant** - usa apenas dados públicos e anonimizados
 
 ---
 
-## 📈 Métricas Monitoradas (Janeiro 2026)
+## 📈 Dados em Tempo Real (Janeiro 2026)
 
-| Métrica | Fonte Polymarket | Prob. Atual |
-|---------|------------------|-------------|
-| Recessão EUA | "Negative GDP growth in 2025?" | ~1.8% |
-| Guerra Ucrânia | "Russia x Ukraine ceasefire by 2026?" | ~55% (invertido) |
-| China-Taiwan | "Will China invade Taiwan by 2026?" | ~12.5% |
-| Inflação Brasil | "Brazil inflation below 5.50%?" | ~0.15% (invertido) |
-| Inflação EUA | "Will inflation reach 5% in 2025?" | ~0.25% |
-| Clima Extremo | "Will 2025 be hottest year?" | ~0.2% |
+| Métrica | Evento Polymarket | Probabilidade |
+|---------|-------------------|---------------|
+| Recessão EUA | "Negative GDP growth in 2025?" | ~1.5% |
+| Guerra Ucrânia | "Ceasefire by 2026?" | ~85% risco (invertido) |
+| China-Taiwan | "China invade Taiwan by 2026?" | ~12.5% |
+| Inflação Brasil | "Inflation below 5.5%?" | ~0% risco (invertido) |
+| Clima Extremo | "Hottest year on record?" | ~0.3% |
 
-*Probabilidades são atualizadas em tempo real do Polymarket*
+*Probabilidades atualizadas em tempo real*
+
+---
+
+## 🌐 Internacionalização
+
+O dashboard suporta 3 idiomas:
+- 🇧🇷 Português (padrão)
+- 🇺🇸 English
+- 🇪🇸 Español
+
+O horário exibido é **local do usuário** (`toLocaleTimeString()`).
 
 ---
 
 ## 🛠️ Tecnologias
 
-- **React 19** - UI moderna com hooks
-- **Vite 6** - Build tool rápido
-- **Tailwind CSS** - Styling utilitário
-- **Recharts** - Gráficos de área
-- **Express 5** - Backend HTTP
-- **Axios** - Cliente HTTP
-- **pytrends 4.9** - Google Trends unofficial API
-- **Google Gemini 2.0** - LLM para insights
-- **Google Cloud Run** - Serverless containers
+| Tecnologia | Versão | Uso |
+|------------|--------|-----|
+| React | 19 | UI moderna com hooks |
+| Vite | 6 | Build tool |
+| Tailwind CSS | CDN | Styling |
+| Express | 5 | Backend HTTP |
+| Axios | 1.x | Cliente HTTP |
+| Recharts | 3.x | Gráficos |
+| pytrends | 4.9 | Google Trends API |
+| Google Gemini | 2.0 Flash | LLM para insights |
+| Google Cloud Run | - | Serverless deploy |
 
 ---
 
