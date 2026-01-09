@@ -10,6 +10,8 @@ export interface RiskMetric {
   history: HistoryPoint[];
   verdict?: string;
   isLoadingVerdict?: boolean;
+  dataSource?: string; // 'polymarket', 'trends', 'polymarket+trends', 'fallback'
+  hasRealData?: boolean; // true if data comes from real APIs
 }
 
 export interface HistoryPoint {

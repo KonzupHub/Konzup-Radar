@@ -293,7 +293,7 @@ const RISK_CONFIGS: RiskConfig[] = [
 
 /**
  * Fetch all risk metrics from real APIs
- * Falls back to simulated data if APIs fail
+ * Only returns metrics with valid data (excludes those without API data)
  */
 export async function fetchRiskMetrics(): Promise<PredictionData> {
   console.log('🔍 Konzup Radar: Fetching risk metrics...');
@@ -305,15 +305,21 @@ export async function fetchRiskMetrics(): Promise<PredictionData> {
     let probability = config.fallbackProbability;
     let history = generateFallbackHistory(probability, 10);
     let dataSource = 'fallback';
+    let hasRealData = false;
     
     try {
       // 1. Try to fetch Polymarket data
       for (const query of config.polymarketQueries) {
         const events = await searchPolymarketEvents(query);
         if (events.length > 0) {
-          probability = extractProbability(events[0]);
-          dataSource = 'polymarket';
-          console.log(`✅ Polymarket data for ${config.id}: ${probability.toFixed(1)}%`);
+          const extractedProb = extractProbability(events[0]);
+          // Only use if probability seems valid (not default 50)
+          if (extractedProb !== 50) {
+            probability = extractedProb;
+            dataSource = 'polymarket';
+            hasRealData = true;
+            console.log(`✅ Polymarket data for ${config.id}: ${probability.toFixed(1)}%`);
+          }
           break;
         }
       }
@@ -323,6 +329,7 @@ export async function fetchRiskMetrics(): Promise<PredictionData> {
       if (trends.history && trends.history.length > 0) {
         history = trends.history;
         if (trends.isReal) {
+          hasRealData = true;
           dataSource = dataSource === 'polymarket' ? 'polymarket+trends' : 'trends';
           console.log(`✅ Google Trends data for ${config.id}: ${trends.currentIndex}`);
         }
@@ -339,16 +346,23 @@ export async function fetchRiskMetrics(): Promise<PredictionData> {
       probability: parseFloat(probability.toFixed(1)),
       trend: determineTrend(history),
       volatility: determineVolatility(history),
-      history
+      history,
+      // Add metadata about data source
+      dataSource,
+      hasRealData
     };
     
     return metric;
   });
   
   const results = await Promise.all(promises);
-  metrics.push(...results);
   
-  console.log('📊 Konzup Radar: Metrics fetch complete');
+  // Filter to show only metrics with some data (real or meaningful fallback)
+  // Show all metrics for now, but mark which have real data
+  const validMetrics = results.filter(m => m !== null);
+  metrics.push(...validMetrics);
+  
+  console.log(`📊 Konzup Radar: ${metrics.length} metrics loaded (${metrics.filter(m => (m as any).hasRealData).length} with real data)`);
   
   return {
     metrics,

@@ -206,14 +206,62 @@ const App: React.FC = () => {
                     </div>
                     <h3 className="text-2xl font-bold text-white">{t.algorithmTitle}</h3>
                   </div>
-                  <div className="text-slate-300 leading-relaxed space-y-4">
+                  <div className="text-slate-300 leading-relaxed space-y-6">
                     <p>{t.algorithmDesc}</p>
-                    <div className="bg-white/5 p-6 rounded-xl border border-white/10 font-mono text-sm">
-                      <p className="text-cyan-400 mb-2">// Fórmula de Cruzamento:</p>
-                      <p className="text-white">Risco Final = (Probabilidade Polymarket × 0.7) + (Índice Trends × 0.3)</p>
-                      <p className="text-slate-500 mt-4">// Onde:</p>
-                      <p className="text-slate-400">• Polymarket = apostas financeiras reais (peso 70%)</p>
-                      <p className="text-slate-400">• Google Trends = volume de buscas (peso 30%)</p>
+                    
+                    {/* Formula Box */}
+                    <div className="bg-gradient-to-r from-purple-500/10 to-cyan-500/10 p-6 rounded-xl border border-purple-500/20">
+                      <p className="text-lg font-bold text-white mb-4">Fórmula de Cruzamento:</p>
+                      <p className="text-2xl font-mono font-bold text-cyan-400">Risco = (Polymarket × 70%) + (Trends × 30%)</p>
+                    </div>
+
+                    {/* Two columns explanation */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="bg-white/5 p-5 rounded-xl border border-white/10">
+                        <div className="flex items-center gap-2 mb-3">
+                          <div className="w-3 h-3 rounded-full bg-purple-500"></div>
+                          <span className="font-bold text-white">Polymarket (peso 70%)</span>
+                        </div>
+                        <ul className="text-slate-400 space-y-2 text-sm">
+                          <li>• São <strong className="text-white">apostas financeiras reais</strong></li>
+                          <li>• Pessoas colocam dinheiro de verdade</li>
+                          <li>• Se muita gente aposta que algo vai acontecer, a probabilidade sobe</li>
+                          <li>• <strong className="text-cyan-400">Dinheiro real = mais confiável</strong></li>
+                        </ul>
+                      </div>
+                      
+                      <div className="bg-white/5 p-5 rounded-xl border border-white/10">
+                        <div className="flex items-center gap-2 mb-3">
+                          <div className="w-3 h-3 rounded-full bg-cyan-500"></div>
+                          <span className="font-bold text-white">Google Trends (peso 30%)</span>
+                        </div>
+                        <ul className="text-slate-400 space-y-2 text-sm">
+                          <li>• <strong className="text-white">Volume de buscas</strong> no Google</li>
+                          <li>• Mostra o que as pessoas estão pesquisando</li>
+                          <li>• Se muita gente pesquisa "greve aérea", indica preocupação</li>
+                          <li>• <strong className="text-cyan-400">Mostra o "humor" do mercado</strong></li>
+                        </ul>
+                      </div>
+                    </div>
+
+                    {/* Practical Example */}
+                    <div className="bg-amber-500/10 p-6 rounded-xl border border-amber-500/20">
+                      <p className="font-bold text-amber-400 mb-3">📊 Exemplo Prático:</p>
+                      <div className="space-y-2 text-slate-300">
+                        <p>• Polymarket diz: <strong className="text-white">75% de chance</strong> de petróleo passar de $90</p>
+                        <p>• Google Trends mostra: <strong className="text-white">+20%</strong> de buscas por "passagem aérea cara"</p>
+                        <p className="mt-3 pt-3 border-t border-amber-500/20">
+                          <strong className="text-red-400">→ Resultado:</strong> Sinal vermelho para custos aéreos no turismo
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Important Note */}
+                    <div className="bg-red-500/10 p-4 rounded-xl border border-red-500/20">
+                      <p className="text-red-400 text-sm">
+                        <strong>⚠️ Importante:</strong> Estes são <strong>indicadores de probabilidade</strong>, não fatos. 
+                        O mercado pode errar. Use como uma ferramenta de apoio à decisão, nunca como certeza absoluta.
+                      </p>
                     </div>
                   </div>
                 </section>
