@@ -10,15 +10,13 @@
 import express from 'express';
 import cors from 'cors';
 import axios from 'axios';
-import { exec } from 'child_process';
-import { promisify } from 'util';
+import { spawn } from 'child_process';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
-const execAsync = promisify(exec);
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -120,12 +118,57 @@ app.get('/api/polymarket/search/:query', async (req, res) => {
 // ======================
 
 /**
+ * Execute Python script safely using spawn (prevents command injection)
+ */
+function runPythonScript(scriptPath, args, timeout = 30000) {
+  return new Promise((resolve, reject) => {
+    const process = spawn('python3', [scriptPath, ...args], {
+      timeout,
+      stdio: ['pipe', 'pipe', 'pipe']
+    });
+    
+    let stdout = '';
+    let stderr = '';
+    
+    process.stdout.on('data', (data) => {
+      stdout += data.toString();
+    });
+    
+    process.stderr.on('data', (data) => {
+      stderr += data.toString();
+    });
+    
+    process.on('close', (code) => {
+      if (code === 0) {
+        resolve({ stdout, stderr });
+      } else {
+        reject(new Error(`Process exited with code ${code}: ${stderr}`));
+      }
+    });
+    
+    process.on('error', (err) => {
+      reject(err);
+    });
+    
+    // Timeout handling
+    setTimeout(() => {
+      process.kill();
+      reject(new Error('Process timed out'));
+    }, timeout);
+  });
+}
+
+/**
  * GET /api/trends/:keyword
  * Execute Python script to fetch Google Trends data
+ * Uses spawn with array arguments to prevent command injection
  */
 app.get('/api/trends/:keyword', async (req, res) => {
   const { keyword } = req.params;
-  const cacheKey = keyword.toLowerCase();
+  
+  // Sanitize keyword - allow only alphanumeric, spaces, and common punctuation
+  const sanitizedKeyword = keyword.replace(/[^\w\s\-.,]/g, '').substring(0, 100);
+  const cacheKey = sanitizedKeyword.toLowerCase();
   
   // Check cache first
   const cached = trendsCache.get(cacheKey);
@@ -135,10 +178,9 @@ app.get('/api/trends/:keyword', async (req, res) => {
   
   try {
     const scriptPath = path.join(__dirname, 'scripts', 'googleTrends.py');
-    const { stdout, stderr } = await execAsync(
-      `python3 "${scriptPath}" "${keyword}"`,
-      { timeout: 30000 }
-    );
+    
+    // Use spawn with array of arguments (safe from command injection)
+    const { stdout, stderr } = await runPythonScript(scriptPath, [sanitizedKeyword]);
     
     if (stderr) {
       console.warn('Python stderr:', stderr);
@@ -158,7 +200,7 @@ app.get('/api/trends/:keyword', async (req, res) => {
     
     // Return mock data on error
     const mockData = {
-      keyword,
+      keyword: sanitizedKeyword,
       currentIndex: 50 + Math.floor(Math.random() * 30),
       history: generateMockHistory(50, 10),
       isReal: false,
