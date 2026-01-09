@@ -244,10 +244,17 @@ gcloud run deploy konzup-radar \
 
 ## 🌐 Internacionalização
 
-O dashboard suporta 3 idiomas:
+O dashboard suporta 3 idiomas com traduções completas:
 - 🇧🇷 Português (padrão)
 - 🇺🇸 English
 - 🇪🇸 Español
+
+### Elementos Traduzidos
+- Interface geral (botões, títulos, textos fixos)
+- Categorias de risco (Geopolítica → Geopolitics)
+- Descrições de risco (Risco de Recessão → US Recession Risk)
+- Popup de informações
+- Insights do Gemini AI
 
 O horário exibido é **local do usuário** (`toLocaleTimeString()`).
 
