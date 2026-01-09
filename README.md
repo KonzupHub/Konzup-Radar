@@ -255,6 +255,11 @@ O dashboard suporta 3 idiomas com traduções completas:
 - Descrições de risco (Risco de Recessão → US Recession Risk)
 - Popup de informações
 - Insights do Gemini AI
+- Página "Como funciona" completa
+
+### Índices de Sentimento
+- **Índex Intenção:** Mede a variação no interesse de busca por viagens e turismo
+- **Índex Confiança:** Representa o nível de estabilidade do mercado baseado na volatilidade dos indicadores
 
 O horário exibido é **local do usuário** (`toLocaleTimeString()`).
 
