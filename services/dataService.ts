@@ -200,7 +200,7 @@ function determineVolatility(history: HistoryPoint[]): 'high' | 'moderate' | 'lo
 interface RiskConfig {
   id: string;
   name: string;
-  category: 'Custo Aéreo' | 'Geopolítica' | 'Saúde Global';
+  category: 'Custo Aéreo' | 'Geopolítica' | 'Saúde Global' | 'Câmbio' | 'Clima' | 'Infraestrutura';
   riskDescription: string;
   polymarketQueries: string[];
   trendsKeyword: string;
@@ -208,15 +208,26 @@ interface RiskConfig {
 }
 
 const RISK_CONFIGS: RiskConfig[] = [
+  // CUSTO AÉREO
   {
     id: 'oil-brent-90',
     name: 'Brent Crude > $90/bbl',
     category: 'Custo Aéreo',
     riskDescription: 'Alta do Petróleo (Brent)',
-    polymarketQueries: ['oil', 'crude', 'brent', 'petroleum', 'energy prices'],
+    polymarketQueries: ['oil', 'crude', 'brent', 'petroleum', 'energy'],
     trendsKeyword: 'oil prices',
     fallbackProbability: 65
   },
+  {
+    id: 'airline-strike',
+    name: 'Greve de Companhias Aéreas',
+    category: 'Custo Aéreo',
+    riskDescription: 'Greves Aéreas na Europa',
+    polymarketQueries: ['airline strike', 'aviation strike', 'pilot strike'],
+    trendsKeyword: 'airline strike europe',
+    fallbackProbability: 28
+  },
+  // GEOPOLÍTICA
   {
     id: 'us-recession-2026',
     name: 'US Recession Probability',
@@ -227,13 +238,52 @@ const RISK_CONFIGS: RiskConfig[] = [
     fallbackProbability: 35
   },
   {
+    id: 'europe-political',
+    name: 'Instabilidade Política Europa',
+    category: 'Geopolítica',
+    riskDescription: 'Tensões Políticas na Europa',
+    polymarketQueries: ['europe political', 'EU crisis', 'european union'],
+    trendsKeyword: 'europe political crisis',
+    fallbackProbability: 42
+  },
+  // SAÚDE GLOBAL
+  {
     id: 'global-pandemic-new',
-    name: 'New Pandemic Variant Lockdowns',
+    name: 'New Pandemic Variant',
     category: 'Saúde Global',
     riskDescription: 'Novas Variantes/Pandemia',
     polymarketQueries: ['pandemic', 'covid', 'lockdown', 'health emergency', 'virus'],
     trendsKeyword: 'pandemic travel restrictions',
     fallbackProbability: 15
+  },
+  // CÂMBIO
+  {
+    id: 'dollar-brazil',
+    name: 'Dólar > R$6,50',
+    category: 'Câmbio',
+    riskDescription: 'Alta do Dólar (Turismo Emissivo)',
+    polymarketQueries: ['brazil currency', 'real dollar', 'emerging markets'],
+    trendsKeyword: 'dolar turismo',
+    fallbackProbability: 55
+  },
+  {
+    id: 'euro-parity',
+    name: 'Euro/Dólar Paridade',
+    category: 'Câmbio',
+    riskDescription: 'Paridade Euro-Dólar',
+    polymarketQueries: ['euro dollar', 'EUR USD', 'currency'],
+    trendsKeyword: 'euro dollar parity',
+    fallbackProbability: 38
+  },
+  // CLIMA
+  {
+    id: 'extreme-weather',
+    name: 'Eventos Climáticos Extremos',
+    category: 'Clima',
+    riskDescription: 'Furacões e Eventos Extremos',
+    polymarketQueries: ['hurricane', 'extreme weather', 'climate event'],
+    trendsKeyword: 'hurricane season forecast',
+    fallbackProbability: 48
   }
 ];
 

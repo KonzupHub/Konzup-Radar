@@ -2,7 +2,7 @@
 export interface RiskMetric {
   id: string;
   name: string;
-  category: 'Custo Aéreo' | 'Geopolítica' | 'Saúde Global';
+  category: 'Custo Aéreo' | 'Geopolítica' | 'Saúde Global' | 'Câmbio' | 'Clima' | 'Infraestrutura';
   riskDescription: string;
   probability: number; // 0-100
   trend: 'up' | 'down' | 'stable';

@@ -1,12 +1,11 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Shield, Radar, Globe, BarChart3, Clock, RefreshCw, Cpu, Menu, ChevronDown, X, ArrowLeft, Info, Scale, Lock } from 'lucide-react';
+import { Shield, Radar, Clock, RefreshCw, ChevronDown, ArrowLeft, Scale, Lock, TrendingUp, BarChart3 } from 'lucide-react';
 import { RiskMetric, PredictionData } from './types';
 import { fetchRiskMetrics } from './services/dataService';
 import { getKonzupVerdict } from './services/geminiService';
 import RiskCard from './components/RiskCard';
 import InfoModal from './components/InfoModal';
-import { COLORS } from './constants';
 import { Language, translations } from './translations';
 
 const App: React.FC = () => {
@@ -14,10 +13,8 @@ const App: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lang, setLang] = useState<Language>('pt');
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [currentView, setCurrentView] = useState<'dashboard' | 'about'>('dashboard');
+  const [currentView, setCurrentView] = useState<'dashboard' | 'about' | 'privacy' | 'terms'>('dashboard');
   
-  // Modal states for quick context (kept for smaller UI interactions if needed)
   const [infoModal, setInfoModal] = useState<{ open: boolean, title: string, content: string }>({ 
     open: false, title: '', content: '' 
   });
@@ -59,7 +56,6 @@ const App: React.FC = () => {
     loadData(lang);
   }, [lang, loadData]);
 
-  const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
   const openInfo = (title: string, content: string) => setInfoModal({ open: true, title, content });
 
   if (loading) {
@@ -71,14 +67,14 @@ const App: React.FC = () => {
         </div>
         <div className="text-center">
           <h1 className="text-xl font-bold text-white uppercase tracking-widest">Konzup Radar</h1>
-          <p className="text-sm text-slate-500 font-mono">Initializing Predictive Engine 2026...</p>
+          <p className="text-sm text-slate-500 font-mono">Carregando dados preditivos...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row bg-[#0f1729] text-slate-200">
+    <div className="min-h-screen flex flex-col bg-[#0f1729] text-slate-200">
       
       <InfoModal 
         isOpen={infoModal.open} 
@@ -87,107 +83,67 @@ const App: React.FC = () => {
         content={infoModal.content} 
       />
 
-      {/* Sidebar */}
-      <aside className={`fixed inset-y-0 left-0 z-40 w-64 border-r border-white/5 bg-[#0f1729] lg:bg-transparent lg:static p-6 flex flex-col gap-8 shrink-0 transition-transform duration-300 lg:translate-x-0 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-        <div className="flex items-center justify-between lg:justify-start gap-3">
-          <div className="flex items-center gap-3">
+      {/* Header */}
+      <header className="h-16 border-b border-white/5 flex items-center justify-between px-6 sticky top-0 z-20 bg-[#0f1729]/90 backdrop-blur-md">
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 cursor-pointer" onClick={() => setCurrentView('dashboard')}>
             <div className="bg-[#ab30ff] p-2 rounded-lg">
-              <Radar className="text-white w-6 h-6" />
+              <Radar className="text-white w-5 h-5" />
             </div>
             <div>
-              <h1 className="font-bold text-lg leading-tight">KONZUP<br/><span className="text-cyan-400 text-xs tracking-[0.3em]">{t.radar}</span></h1>
+              <h1 className="font-bold text-lg leading-tight">KONZUP <span className="text-cyan-400 text-xs tracking-[0.2em]">RADAR</span></h1>
             </div>
           </div>
-          <button onClick={toggleSidebar} className="lg:hidden p-2 hover:bg-white/5 rounded-lg">
-            <X className="w-6 h-6 text-slate-400" />
-          </button>
-        </div>
-
-        <nav className="flex flex-col gap-2">
-          <button 
-            onClick={() => { setCurrentView('dashboard'); setIsSidebarOpen(false); }}
-            className={`flex items-center gap-3 p-3 rounded-lg transition-all text-left ${currentView === 'dashboard' ? 'bg-white/5 text-white border border-white/10' : 'text-slate-400 hover:bg-white/5'}`}
-          >
-            <Globe className="w-5 h-5 text-cyan-400" />
-            <span className="text-sm font-semibold">{t.globalRisks}</span>
-          </button>
-          <button 
-            onClick={() => { setCurrentView('about'); setIsSidebarOpen(false); }}
-            className={`flex items-center gap-3 p-3 rounded-lg transition-all text-left ${currentView === 'about' ? 'bg-white/5 text-white border border-white/10' : 'text-slate-400 hover:bg-white/5'}`}
-          >
-            <Info className="w-5 h-5 text-purple-400" />
-            <span className="text-sm font-semibold">{t.howItWorks}</span>
-          </button>
-        </nav>
-
-        <div className="mt-auto border-t border-white/5 pt-6">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-            <span className="text-[10px] uppercase font-bold text-slate-500">{t.nodeStatus}</span>
+          <div className="hidden md:flex items-center gap-2 ml-6">
+            <Clock className="w-4 h-4 text-cyan-400" />
+            <span className="text-sm font-mono text-slate-400 uppercase tracking-tighter">Janeiro 2026 | {new Date().toLocaleTimeString('pt-BR')}</span>
           </div>
-          <p className="text-[10px] text-slate-500 font-mono leading-tight uppercase">
-            Cluster: SP-01-PRD<br/>
-            Engine: Gemini-3-Flash<br/>
-            Region: LATAM-HQ
-          </p>
         </div>
-      </aside>
+        
+        <div className="flex items-center gap-3">
+           <button 
+              onClick={() => setCurrentView('about')}
+              className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 hover:border-purple-500/30 transition-all cursor-pointer"
+           >
+              <BarChart3 className="w-4 h-4 text-purple-400" />
+              <span className="text-xs font-semibold text-slate-300 uppercase">{t.howItWorks}</span>
+           </button>
+
+           <div className="relative flex items-center">
+             <select 
+               value={lang}
+               onChange={(e) => setLang(e.target.value as Language)}
+               className="bg-white/5 border border-white/10 text-xs font-bold text-slate-300 rounded-lg px-3 py-2 appearance-none cursor-pointer hover:bg-white/10 transition-all uppercase outline-none pr-8"
+             >
+               <option value="pt" className="bg-[#0f1729]">PT</option>
+               <option value="en" className="bg-[#0f1729]">EN</option>
+               <option value="es" className="bg-[#0f1729]">ES</option>
+             </select>
+             <ChevronDown className="w-3 h-3 text-slate-500 absolute right-3 pointer-events-none" />
+           </div>
+
+           <button 
+             onClick={() => loadData(lang)}
+             disabled={isRefreshing}
+             className="p-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 transition-all flex items-center gap-2"
+           >
+             <RefreshCw className={`w-4 h-4 text-cyan-400 ${isRefreshing ? 'animate-spin' : ''}`} />
+             <span className="text-xs font-bold uppercase hidden sm:inline">{t.refreshData}</span>
+           </button>
+        </div>
+      </header>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col min-w-0">
-        <header className="h-16 border-b border-white/5 flex items-center justify-between px-6 sticky top-0 z-20 bg-[#0f1729]/80 backdrop-blur-md">
-          <div className="flex items-center gap-4">
-             <button onClick={toggleSidebar} className="lg:hidden p-2 hover:bg-white/5 rounded-lg">
-                <Menu className="w-6 h-6 text-slate-300" />
-             </button>
-             <div className="flex items-center gap-2">
-               <Clock className="w-4 h-4 text-cyan-400" />
-               <span className="text-sm font-mono text-slate-400 uppercase tracking-tighter">Janeiro 2026 | 09:42:15 GMT-3</span>
-             </div>
-          </div>
-          
-          <div className="flex items-center gap-4">
-             <button 
-                onClick={() => setCurrentView('about')}
-                className="hidden md:flex items-center gap-3 px-3 py-1.5 rounded-full border border-white/5 bg-white/5 hover:border-purple-500/30 transition-all cursor-pointer"
-             >
-                <Cpu className="w-4 h-4 text-purple-400" />
-                <span className="text-xs font-semibold text-slate-300 uppercase">{t.predictiveAnalytics}</span>
-             </button>
-
-             <div className="relative flex items-center">
-               <select 
-                 value={lang}
-                 onChange={(e) => setLang(e.target.value as Language)}
-                 className="bg-white/5 border border-white/10 text-xs font-bold text-slate-300 rounded-lg px-3 py-1.5 appearance-none cursor-pointer hover:bg-white/10 transition-all uppercase outline-none pr-8"
-               >
-                 <option value="pt" className="bg-[#0f1729]">PT</option>
-                 <option value="en" className="bg-[#0f1729]">EN</option>
-                 <option value="es" className="bg-[#0f1729]">ES</option>
-               </select>
-               <ChevronDown className="w-3 h-3 text-slate-500 absolute right-3 pointer-events-none" />
-             </div>
-
-             <button 
-               onClick={() => loadData(lang)}
-               disabled={isRefreshing}
-               className="p-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 transition-all flex items-center gap-2"
-             >
-               <RefreshCw className={`w-4 h-4 text-cyan-400 ${isRefreshing ? 'animate-spin' : ''}`} />
-               <span className="text-xs font-bold uppercase hidden sm:inline">{t.refreshData}</span>
-             </button>
-          </div>
-        </header>
-
-        <div className="p-6 lg:p-10 overflow-y-auto">
+      <main className="flex-1 flex flex-col">
+        <div className="p-6 lg:p-10 overflow-y-auto flex-1">
           {currentView === 'dashboard' ? (
             <>
               <div className="mb-10 animate-in fade-in slide-in-from-bottom-2 duration-500">
-                <h2 className="text-4xl font-bold text-white tracking-tight mb-2 uppercase">{t.monitorTitle}</h2>
+                <h2 className="text-3xl md:text-4xl font-bold text-white tracking-tight mb-2 uppercase">{t.monitorTitle}</h2>
                 <p className="text-slate-400 max-w-2xl">{t.monitorSub}</p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in zoom-in-95 duration-500">
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 animate-in fade-in zoom-in-95 duration-500">
                 {data?.metrics.map((metric) => (
                   <RiskCard key={metric.id} metric={metric} lang={lang} onInfoClick={openInfo} />
                 ))}
@@ -216,7 +172,7 @@ const App: React.FC = () => {
                  </div>
               </div>
             </>
-          ) : (
+          ) : currentView === 'about' ? (
             <div className="max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
               <button 
                 onClick={() => setCurrentView('dashboard')}
@@ -240,6 +196,26 @@ const App: React.FC = () => {
                   <p className="text-slate-300 leading-relaxed text-lg">
                     {t.projectDesc}
                   </p>
+                </section>
+
+                {/* Algorithm Explanation */}
+                <section className="glass p-8 rounded-2xl border-white/10">
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="p-3 bg-cyan-500/20 rounded-xl">
+                      <TrendingUp className="w-6 h-6 text-cyan-400" />
+                    </div>
+                    <h3 className="text-2xl font-bold text-white">{t.algorithmTitle}</h3>
+                  </div>
+                  <div className="text-slate-300 leading-relaxed space-y-4">
+                    <p>{t.algorithmDesc}</p>
+                    <div className="bg-white/5 p-6 rounded-xl border border-white/10 font-mono text-sm">
+                      <p className="text-cyan-400 mb-2">// Fórmula de Cruzamento:</p>
+                      <p className="text-white">Risco Final = (Probabilidade Polymarket × 0.7) + (Índice Trends × 0.3)</p>
+                      <p className="text-slate-500 mt-4">// Onde:</p>
+                      <p className="text-slate-400">• Polymarket = apostas financeiras reais (peso 70%)</p>
+                      <p className="text-slate-400">• Google Trends = volume de buscas (peso 30%)</p>
+                    </div>
+                  </div>
                 </section>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -269,26 +245,103 @@ const App: React.FC = () => {
                 </div>
               </div>
             </div>
-          )}
+          ) : currentView === 'privacy' ? (
+            <div className="max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <button 
+                onClick={() => setCurrentView('dashboard')}
+                className="flex items-center gap-2 text-cyan-400 hover:text-cyan-300 transition-colors mb-8 font-bold uppercase text-sm"
+              >
+                <ArrowLeft className="w-4 h-4" /> {t.backButton}
+              </button>
+              <h2 className="text-4xl font-bold text-white mb-10 border-b border-white/10 pb-6 uppercase tracking-tight">
+                Política de Privacidade
+              </h2>
+              <div className="prose prose-invert max-w-none">
+                <div className="glass p-8 rounded-2xl border-white/10 space-y-6 text-slate-300">
+                  <p><strong>Última atualização:</strong> Janeiro de 2026</p>
+                  
+                  <h3 className="text-xl font-bold text-white">1. Coleta de Dados</h3>
+                  <p>O Konzup Radar <strong>não coleta dados pessoais</strong> dos usuários. Não solicitamos nome, e-mail, CPF ou qualquer informação identificável. Utilizamos apenas cookies técnicos essenciais para o funcionamento do site.</p>
+                  
+                  <h3 className="text-xl font-bold text-white">2. Dados Utilizados</h3>
+                  <p>As informações exibidas no dashboard são obtidas exclusivamente de fontes públicas:</p>
+                  <ul className="list-disc list-inside space-y-1">
+                    <li>Polymarket (mercados de previsão públicos)</li>
+                    <li>Google Trends (índices de busca agregados)</li>
+                  </ul>
+                  
+                  <h3 className="text-xl font-bold text-white">3. LGPD - Lei Geral de Proteção de Dados</h3>
+                  <p>Em conformidade com a Lei nº 13.709/2018 (LGPD), informamos que este site opera sem tratamento de dados pessoais. Caso você tenha dúvidas sobre privacidade, entre em contato: <a href="mailto:privacidade@konzup.com" className="text-cyan-400 hover:underline">privacidade@konzup.com</a></p>
+                  
+                  <h3 className="text-xl font-bold text-white">4. Cookies e Analytics</h3>
+                  <p>Utilizamos Google Analytics para entender o tráfego do site de forma agregada e anônima. Você pode desabilitar cookies nas configurações do seu navegador.</p>
+                  
+                  <h3 className="text-xl font-bold text-white">5. Alterações</h3>
+                  <p>Esta política pode ser atualizada periodicamente. Recomendamos verificar esta página regularmente.</p>
+                </div>
+              </div>
+            </div>
+          ) : currentView === 'terms' ? (
+            <div className="max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <button 
+                onClick={() => setCurrentView('dashboard')}
+                className="flex items-center gap-2 text-cyan-400 hover:text-cyan-300 transition-colors mb-8 font-bold uppercase text-sm"
+              >
+                <ArrowLeft className="w-4 h-4" /> {t.backButton}
+              </button>
+              <h2 className="text-4xl font-bold text-white mb-10 border-b border-white/10 pb-6 uppercase tracking-tight">
+                Termos de Uso
+              </h2>
+              <div className="prose prose-invert max-w-none">
+                <div className="glass p-8 rounded-2xl border-white/10 space-y-6 text-slate-300">
+                  <p><strong>Última atualização:</strong> Janeiro de 2026</p>
+                  
+                  <h3 className="text-xl font-bold text-white">1. Aceitação dos Termos</h3>
+                  <p>Ao acessar o Konzup Radar, você concorda com estes termos de uso. Se não concordar, não utilize o serviço.</p>
+                  
+                  <h3 className="text-xl font-bold text-white">2. Natureza das Informações</h3>
+                  <p>As informações apresentadas neste site são <strong>indicadores estatísticos e probabilísticos</strong>, baseados em dados públicos de mercados de previsão e tendências de busca. <strong>NÃO CONSTITUEM:</strong></p>
+                  <ul className="list-disc list-inside space-y-1">
+                    <li>Aconselhamento financeiro ou de investimento</li>
+                    <li>Garantia de eventos futuros</li>
+                    <li>Recomendação de compra ou venda</li>
+                  </ul>
+                  
+                  <h3 className="text-xl font-bold text-white">3. Isenção de Responsabilidade</h3>
+                  <p>A Konzup Predict Ltd. não se responsabiliza por decisões tomadas com base nas informações exibidas. Todo investimento envolve riscos e o usuário deve fazer sua própria análise.</p>
+                  
+                  <h3 className="text-xl font-bold text-white">4. Propriedade Intelectual</h3>
+                  <p>Todo o conteúdo, design e código do Konzup Radar são propriedade da Konzup Predict Ltd. É proibida a reprodução sem autorização.</p>
+                  
+                  <h3 className="text-xl font-bold text-white">5. Disponibilidade</h3>
+                  <p>O serviço é fornecido "como está". Não garantimos disponibilidade ininterrupta ou ausência de erros.</p>
+                  
+                  <h3 className="text-xl font-bold text-white">6. Contato</h3>
+                  <p>Para dúvidas sobre estes termos: <a href="mailto:legal@konzup.com" className="text-cyan-400 hover:underline">legal@konzup.com</a></p>
+                </div>
+              </div>
+            </div>
+          ) : null}
+        </div>
 
-          <footer className="mt-16 text-[10px] font-mono text-slate-600 flex flex-wrap justify-between border-t border-white/5 pt-4 uppercase">
+        {/* Footer */}
+        <footer className="border-t border-white/5 px-6 py-4">
+          <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4 text-[11px] font-mono text-slate-500 uppercase">
             <a href="https://konzup.com" target="_blank" rel="noopener noreferrer" className="hover:text-purple-400 transition-colors font-bold">
               {t.copyright}
             </a>
-            <div className="flex gap-6">
-              <span>JANUARY 2026 EDITION</span>
-              <span>KONZUP RADAR PRO</span>
+            <div className="flex flex-wrap justify-center gap-4 md:gap-6">
+              <button onClick={() => setCurrentView('privacy')} className="hover:text-cyan-400 transition-colors">
+                Política de Privacidade
+              </button>
+              <button onClick={() => setCurrentView('terms')} className="hover:text-cyan-400 transition-colors">
+                Termos de Uso
+              </button>
+              <span className="hidden md:inline">Janeiro 2026</span>
             </div>
-          </footer>
-        </div>
+          </div>
+        </footer>
       </main>
-      
-      {isSidebarOpen && (
-        <div 
-          className="fixed inset-0 z-30 bg-black/50 lg:hidden" 
-          onClick={toggleSidebar}
-        />
-      )}
     </div>
   );
 };

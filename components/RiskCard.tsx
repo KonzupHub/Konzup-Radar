@@ -26,6 +26,23 @@ const RiskCard: React.FC<RiskCardProps> = ({ metric, lang, onInfoClick }) => {
     }
   };
 
+  // Check if insight is valid (not an error or config message)
+  const hasValidInsight = () => {
+    if (metric.isLoadingVerdict) return true; // Still loading
+    if (!metric.verdict) return false;
+    
+    const invalidPhrases = [
+      'Configure GEMINI_API_KEY',
+      'GEMINI_API_KEY',
+      'Conexão AI em modo de espera',
+      'AI Offline',
+      'IA Offline',
+      '.env'
+    ];
+    
+    return !invalidPhrases.some(phrase => metric.verdict?.includes(phrase));
+  };
+
   return (
     <div className="glass rounded-xl p-5 flex flex-col gap-4 relative overflow-hidden transition-all duration-300 hover:border-white/20">
       <div className="absolute top-0 left-0 h-1 bg-gradient-to-r" style={{ width: `${metric.probability}%`, backgroundColor: statusColor }}></div>
@@ -37,7 +54,7 @@ const RiskCard: React.FC<RiskCardProps> = ({ metric, lang, onInfoClick }) => {
           </span>
           <h3 className="text-lg font-semibold text-white flex items-center gap-2">
             {metric.riskDescription}
-            <button onClick={() => onInfoClick(metric.riskDescription, t.infoContent)}>
+            <button onClick={() => onInfoClick(metric.riskDescription, `Indicador de risco para o setor de turismo. Probabilidade atual: ${metric.probability}%. Tendência: ${metric.trend === 'up' ? 'Alta' : metric.trend === 'down' ? 'Baixa' : 'Estável'}.`)}>
               <Info className="w-4 h-4 text-slate-500 hover:text-cyan-400 cursor-help transition-colors" />
             </button>
           </h3>
@@ -86,21 +103,24 @@ const RiskCard: React.FC<RiskCardProps> = ({ metric, lang, onInfoClick }) => {
         </ResponsiveContainer>
       </div>
 
-      <div className="mt-2 p-3 rounded-lg border border-purple-500/20 bg-purple-500/5">
-        <div className="flex items-center gap-2 mb-2">
-          <div className="w-2 h-2 rounded-full bg-[#ab30ff] animate-pulse"></div>
-          <span className="text-[10px] font-bold text-[#ab30ff] uppercase tracking-widest">{t.verdictTitle}</span>
+      {/* Only show insight section if we have valid data */}
+      {hasValidInsight() && (
+        <div className="mt-2 p-3 rounded-lg border border-purple-500/20 bg-purple-500/5">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-2 h-2 rounded-full bg-[#ab30ff] animate-pulse"></div>
+            <span className="text-[10px] font-bold text-[#ab30ff] uppercase tracking-widest">{t.verdictTitle}</span>
+          </div>
+          <p className="text-sm text-slate-200 leading-relaxed font-medium italic">
+            {metric.isLoadingVerdict ? (
+              <span className="flex items-center gap-2 animate-pulse text-slate-500">
+                {t.processing}
+              </span>
+            ) : (
+              `"${metric.verdict}"`
+            )}
+          </p>
         </div>
-        <p className="text-sm text-slate-200 leading-relaxed font-medium italic">
-          {metric.isLoadingVerdict ? (
-            <span className="flex items-center gap-2 animate-pulse text-slate-500">
-              {t.processing}
-            </span>
-          ) : (
-            `"${metric.verdict || t.verdictError}"`
-          )}
-        </p>
-      </div>
+      )}
     </div>
   );
 };
