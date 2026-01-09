@@ -257,9 +257,11 @@ O dashboard suporta 3 idiomas com traduções completas:
 - Insights do Gemini AI
 - Página "Como funciona" completa
 
-### Índices de Sentimento
-- **Índex Intenção:** Mede a variação no interesse de busca por viagens e turismo
-- **Índex Confiança:** Representa o nível de estabilidade do mercado baseado na volatilidade dos indicadores
+### Índices de Sentimento (Dinâmicos)
+- **Índex Intenção:** Calculado em tempo real baseado nas tendências (up/down/stable) de todos os indicadores. Positivo = demanda crescente, Negativo = demanda retraindo.
+- **Índex Confiança:** Calculado em tempo real baseado na volatilidade dos indicadores. Quanto menor a volatilidade média, maior a confiança (0-100).
+
+*Ambos os índices atualizam automaticamente quando você clica em "Refresh".*
 
 O horário exibido é **local do usuário** (`toLocaleTimeString()`).
 

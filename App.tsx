@@ -58,6 +58,40 @@ const App: React.FC = () => {
 
   const openInfo = (title: string, content: string) => setInfoModal({ open: true, title, content });
 
+  // Calculate dynamic Intention Index (based on trends)
+  const calculateIntentionIndex = (): string => {
+    if (!data?.metrics || data.metrics.length === 0) return '+0.0%';
+    
+    let trendScore = 0;
+    data.metrics.forEach(m => {
+      if (m.trend === 'up') trendScore += 1;
+      else if (m.trend === 'down') trendScore -= 1;
+      // stable = 0
+    });
+    
+    // Convert to percentage based on number of metrics
+    const percentage = (trendScore / data.metrics.length) * 15; // Scale to reasonable range
+    const sign = percentage >= 0 ? '+' : '';
+    return `${sign}${percentage.toFixed(1)}%`;
+  };
+
+  // Calculate dynamic Confidence Index (inverse of volatility)
+  const calculateConfidenceIndex = (): string => {
+    if (!data?.metrics || data.metrics.length === 0) return '50.0';
+    
+    let volatilityScore = 0;
+    data.metrics.forEach(m => {
+      if (m.volatility === 'high') volatilityScore += 3;
+      else if (m.volatility === 'moderate') volatilityScore += 2;
+      else volatilityScore += 1; // low
+    });
+    
+    // Convert to confidence (inverse) - scale 0-100
+    const avgVolatility = volatilityScore / data.metrics.length;
+    const confidence = 100 - (avgVolatility * 20); // Higher volatility = lower confidence
+    return Math.max(0, Math.min(100, confidence)).toFixed(1);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-[#0f1729]">
@@ -162,11 +196,15 @@ const App: React.FC = () => {
                     <div className="flex gap-4">
                       <div className="text-center p-4 bg-white/5 rounded-xl border border-white/5 min-w-[120px]">
                         <div className="text-xs text-slate-500 uppercase font-bold mb-1">{t.intentionIndex}</div>
-                        <div className="text-2xl font-mono font-bold text-cyan-400">+12.4%</div>
+                        <div className={`text-2xl font-mono font-bold ${calculateIntentionIndex().startsWith('-') ? 'text-red-400' : 'text-cyan-400'}`}>
+                          {calculateIntentionIndex()}
+                        </div>
                       </div>
                       <div className="text-center p-4 bg-white/5 rounded-xl border border-white/5 min-w-[120px]">
                         <div className="text-xs text-slate-500 uppercase font-bold mb-1">{t.confidenceIndex}</div>
-                        <div className="text-2xl font-mono font-bold text-amber-500">64.2</div>
+                        <div className={`text-2xl font-mono font-bold ${parseFloat(calculateConfidenceIndex()) > 60 ? 'text-emerald-400' : parseFloat(calculateConfidenceIndex()) > 40 ? 'text-amber-500' : 'text-red-400'}`}>
+                          {calculateConfidenceIndex()}
+                        </div>
                       </div>
                     </div>
                  </div>
