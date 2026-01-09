@@ -1,0 +1,3 @@
+# Python dependencies for Konzup Radar
+# Google Trends data fetching
+pytrends==4.9.2

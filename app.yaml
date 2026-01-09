@@ -1,0 +1,27 @@
+# ======================
+# KONZUP RADAR - Google Cloud Run Configuration
+# ======================
+# 
+# Deploy commands:
+#   gcloud builds submit --tag gcr.io/YOUR_PROJECT_ID/konzup-radar
+#   gcloud run deploy konzup-radar --image gcr.io/YOUR_PROJECT_ID/konzup-radar --platform managed
+#
+# Or deploy directly:
+#   gcloud run deploy konzup-radar --source . --platform managed --region us-central1
+
+runtime: nodejs20
+
+env: standard
+
+instance_class: F2
+
+automatic_scaling:
+  min_instances: 0
+  max_instances: 10
+  target_cpu_utilization: 0.65
+
+env_variables:
+  NODE_ENV: "production"
+
+# Note: Set GEMINI_API_KEY via Cloud Run secrets or environment variables
+# gcloud run services update konzup-radar --set-env-vars "GEMINI_API_KEY=your-key"

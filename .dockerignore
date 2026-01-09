@@ -1,0 +1,45 @@
+# Dependencies
+node_modules
+npm-debug.log
+
+# Environment files (secrets)
+.env
+.env.local
+.env.*.local
+
+# Build output (we'll build inside Docker)
+dist
+build
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git
+.git
+.gitignore
+
+# Python cache
+__pycache__
+*.py[cod]
+*$py.class
+.Python
+venv
+env
+.venv
+
+# Testing
+coverage
+.nyc_output
+
+# Misc
+*.log
+*.md
+!README.md
+.cursor
