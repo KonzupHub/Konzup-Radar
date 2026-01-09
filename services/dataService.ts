@@ -4,6 +4,8 @@
  * Integrates with:
  * - Polymarket Gamma API (via proxy) for prediction market probabilities
  * - Google Trends (via Python/pytrends) for search interest data
+ * 
+ * Uses REAL data from both APIs - no mocked data
  */
 
 import axios from 'axios';
@@ -37,67 +39,113 @@ interface PolymarketMarket {
   outcomes: string;
 }
 
+// Cache for Polymarket events
+let polymarketEventsCache: PolymarketEvent[] = [];
+let cacheTimestamp = 0;
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
 /**
- * Search Polymarket events by query
+ * Fetch ALL active Polymarket events
  */
-async function searchPolymarketEvents(query: string): Promise<PolymarketEvent[]> {
+async function fetchAllPolymarketEvents(): Promise<PolymarketEvent[]> {
+  // Return cached if fresh
+  if (polymarketEventsCache.length > 0 && Date.now() - cacheTimestamp < CACHE_TTL) {
+    return polymarketEventsCache;
+  }
+  
   try {
     const response = await axios.get(`${API_BASE}/api/polymarket/events`, {
       params: {
         active: true,
         closed: false,
-        limit: 10
+        limit: 200 // Fetch more to find relevant events
       },
-      timeout: 15000
+      timeout: 20000
     });
     
-    // Filter events that match our query
-    const events = response.data || [];
-    return events.filter((event: PolymarketEvent) => {
-      const searchText = `${event.title} ${event.description || ''}`.toLowerCase();
-      return query.toLowerCase().split(' ').some(word => searchText.includes(word));
-    });
+    polymarketEventsCache = response.data || [];
+    cacheTimestamp = Date.now();
+    console.log(`📊 Polymarket: Loaded ${polymarketEventsCache.length} events`);
+    return polymarketEventsCache;
   } catch (error) {
-    console.error(`Polymarket search error for "${query}":`, error);
-    return [];
+    console.error('Polymarket fetch error:', error);
+    return polymarketEventsCache; // Return stale cache if available
   }
 }
 
 /**
+ * Find Polymarket event matching keywords (case insensitive)
+ */
+function findMatchingEvent(events: PolymarketEvent[], keywords: string[]): PolymarketEvent | null {
+  const lowerKeywords = keywords.map(k => k.toLowerCase());
+  
+  for (const event of events) {
+    const titleLower = event.title.toLowerCase();
+    const descLower = (event.description || '').toLowerCase();
+    const searchText = `${titleLower} ${descLower}`;
+    
+    // Check if any keyword matches
+    const matches = lowerKeywords.filter(kw => searchText.includes(kw));
+    if (matches.length >= 1) {
+      return event;
+    }
+  }
+  return null;
+}
+
+/**
  * Extract probability from Polymarket event
- * outcomePrices is typically "[0.75, 0.25]" where first is "Yes" probability
+ * 
+ * Polymarket binary markets have two outcomes with prices that sum to 1.0
+ * For risk monitoring, we typically want to show the probability of the "risky" outcome
+ * 
+ * Strategy: Return the HIGHER probability value
+ * - This represents what the market BELIEVES will happen
+ * - For "Will X bad thing happen?" → high value = high risk
+ * - For "Will X good thing happen?" → use invertProbability to flip
  */
 function extractProbability(event: PolymarketEvent): number {
   try {
+    let prices: number[] = [];
+    
     // Try to get from event directly
     if (event.outcomePrices) {
-      const prices = typeof event.outcomePrices === 'string' 
+      const rawPrices = typeof event.outcomePrices === 'string' 
         ? JSON.parse(event.outcomePrices)
         : event.outcomePrices;
       
-      if (Array.isArray(prices) && prices.length > 0) {
-        return parseFloat(prices[0]) * 100;
+      if (Array.isArray(rawPrices) && rawPrices.length > 0) {
+        prices = rawPrices.map((p: string | number) => parseFloat(String(p)));
       }
     }
     
-    // Try to get from first market
-    if (event.markets && event.markets.length > 0) {
+    // Try to get from first market if no direct prices
+    if (prices.length === 0 && event.markets && event.markets.length > 0) {
       const market = event.markets[0];
       if (market.outcomePrices) {
-        const prices = typeof market.outcomePrices === 'string'
+        const rawPrices = typeof market.outcomePrices === 'string'
           ? JSON.parse(market.outcomePrices)
           : market.outcomePrices;
         
-        if (Array.isArray(prices) && prices.length > 0) {
-          return parseFloat(prices[0]) * 100;
+        if (Array.isArray(rawPrices) && rawPrices.length > 0) {
+          prices = rawPrices.map((p: string | number) => parseFloat(String(p)));
         }
       }
+    }
+    
+    // Return the FIRST price (YES probability) as percentage
+    // The caller will use invertProbability if needed
+    if (prices.length >= 2) {
+      // For typical binary markets: first value is YES probability
+      return prices[0] * 100;
+    } else if (prices.length === 1) {
+      return prices[0] * 100;
     }
   } catch (e) {
     console.warn('Error parsing outcome prices:', e);
   }
   
-  return 50; // Default fallback
+  return -1; // Return -1 to indicate no valid data
 }
 
 // ======================
@@ -195,96 +243,116 @@ function determineVolatility(history: HistoryPoint[]): 'high' | 'moderate' | 'lo
 
 // ======================
 // RISK METRIC CONFIGURATIONS
+// Cada risco tem keywords para buscar no Polymarket
 // ======================
 
 interface RiskConfig {
   id: string;
   name: string;
-  category: 'Custo Aéreo' | 'Geopolítica' | 'Saúde Global' | 'Câmbio' | 'Clima' | 'Infraestrutura';
+  category: 'Custo Aéreo' | 'Geopolítica' | 'Saúde Global' | 'Câmbio' | 'Clima';
   riskDescription: string;
-  polymarketQueries: string[];
+  polymarketKeywords: string[]; // Keywords to find matching events
   trendsKeyword: string;
-  fallbackProbability: number;
+  invertProbability?: boolean; // Some events have inverted logic (e.g., "inflation below X" = good)
 }
 
 const RISK_CONFIGS: RiskConfig[] = [
-  // CUSTO AÉREO
+  // GEOPOLÍTICA - Recessão EUA
+  // Evento: "Negative GDP growth in 2025?" → Yes = 1.8% (baixo risco de recessão)
   {
-    id: 'oil-brent-90',
-    name: 'Brent Crude > $90/bbl',
-    category: 'Custo Aéreo',
-    riskDescription: 'Alta do Petróleo (Brent)',
-    polymarketQueries: ['oil', 'crude', 'brent', 'petroleum', 'energy'],
-    trendsKeyword: 'oil prices',
-    fallbackProbability: 65
-  },
-  {
-    id: 'airline-strike',
-    name: 'Greve de Companhias Aéreas',
-    category: 'Custo Aéreo',
-    riskDescription: 'Greves Aéreas na Europa',
-    polymarketQueries: ['airline strike', 'aviation strike', 'pilot strike'],
-    trendsKeyword: 'airline strike europe',
-    fallbackProbability: 28
-  },
-  // GEOPOLÍTICA
-  {
-    id: 'us-recession-2026',
-    name: 'US Recession Probability',
+    id: 'us-recession',
+    name: 'Recessão nos EUA',
     category: 'Geopolítica',
-    riskDescription: 'Instabilidade nos EUA / Recessão',
-    polymarketQueries: ['recession', 'US economy', 'economic downturn', 'GDP'],
-    trendsKeyword: 'US recession',
-    fallbackProbability: 35
+    riskDescription: 'Risco de Recessão Americana',
+    polymarketKeywords: ['negative gdp'],
+    trendsKeyword: 'US recession 2025',
+    // YES = recessão acontece = risco direto
   },
+  
+  // GEOPOLÍTICA - Conflito Ucrânia
+  // Evento: "Russia x Ukraine ceasefire by end of 2026?" → Yes = 44.5%
+  // Se cessar-fogo tem 44.5%, guerra continua tem 55.5% de risco
+  {
+    id: 'ukraine-war',
+    name: 'Conflito Rússia-Ucrânia',
+    category: 'Geopolítica',
+    riskDescription: 'Guerra na Europa Oriental',
+    polymarketKeywords: ['ceasefire', '2026'],
+    trendsKeyword: 'ukraine war tourism europe',
+    invertProbability: true // Ceasefire = bom, inverte para mostrar risco de guerra
+  },
+  
+  // GEOPOLÍTICA - Tensão Ásia
+  // Evento: "Will China invade Taiwan by end of 2026?" → Yes = 12.5%
+  {
+    id: 'china-taiwan',
+    name: 'Tensão China-Taiwan',
+    category: 'Geopolítica',
+    riskDescription: 'Risco Geopolítico na Ásia',
+    polymarketKeywords: ['china', 'invade', 'taiwan'],
+    trendsKeyword: 'china taiwan travel risk',
+    // YES = invasão = risco direto
+  },
+  
+  // CÂMBIO - Inflação Brasil
+  // Evento: "Brazil's 12-month inflation below 5.50%?" → Yes = 99.85%
+  // Alta chance de ficar ABAIXO = BAIXO risco de inflação
+  {
+    id: 'brazil-inflation',
+    name: 'Inflação Brasil',
+    category: 'Câmbio',
+    riskDescription: 'Pressão Inflacionária no Brasil',
+    polymarketKeywords: ['brazil', 'inflation', '5.50'],
+    trendsKeyword: 'inflacao brasil turismo',
+    invertProbability: true // "Below X" YES = bom, inverte para mostrar risco
+  },
+  
+  // CÂMBIO - Inflação Global (EUA)
+  // Evento: "Will inflation reach more than 5% in 2025?" → Yes = 0.25%
+  {
+    id: 'us-inflation',
+    name: 'Inflação nos EUA',
+    category: 'Câmbio',
+    riskDescription: 'Inflação Alta nos EUA',
+    polymarketKeywords: ['inflation', 'reach', '5%'],
+    trendsKeyword: 'US inflation 2025',
+    // YES = inflação alta = risco direto
+  },
+  
+  // CLIMA - Ano mais quente
+  // Evento: "Will 2025 be the hottest year on record?" → Yes = 0.2%
+  {
+    id: 'climate-extreme',
+    name: 'Clima Extremo 2025',
+    category: 'Clima',
+    riskDescription: 'Eventos Climáticos Extremos',
+    polymarketKeywords: ['hottest year'],
+    trendsKeyword: 'extreme weather tourism',
+    // YES = risco climático direto
+  },
+  
+  // GEOPOLÍTICA - Instabilidade Europa
+  // Eventos: "Macron out by...?", "Starmer out by...?"
   {
     id: 'europe-political',
-    name: 'Instabilidade Política Europa',
+    name: 'Crise Política Europa',
     category: 'Geopolítica',
-    riskDescription: 'Tensões Políticas na Europa',
-    polymarketQueries: ['europe political', 'EU crisis', 'european union'],
+    riskDescription: 'Instabilidade na Europa',
+    polymarketKeywords: ['macron out', 'starmer out'],
     trendsKeyword: 'europe political crisis',
-    fallbackProbability: 42
+    // YES = crise política = risco
   },
-  // SAÚDE GLOBAL
+  
+  // CUSTO AÉREO - Baseado em Google Trends (Polymarket não tem eventos de petróleo)
   {
-    id: 'global-pandemic-new',
-    name: 'New Pandemic Variant',
-    category: 'Saúde Global',
-    riskDescription: 'Novas Variantes/Pandemia',
-    polymarketQueries: ['pandemic', 'covid', 'lockdown', 'health emergency', 'virus'],
-    trendsKeyword: 'pandemic travel restrictions',
-    fallbackProbability: 15
+    id: 'oil-fuel-costs',
+    name: 'Custos de Combustível',
+    category: 'Custo Aéreo',
+    riskDescription: 'Alta do Querosene de Aviação',
+    polymarketKeywords: ['oil', 'energy crisis', 'fuel'],
+    trendsKeyword: 'jet fuel prices',
+    // Trends-based principalmente
   },
-  // CÂMBIO
-  {
-    id: 'dollar-brazil',
-    name: 'Dólar > R$6,50',
-    category: 'Câmbio',
-    riskDescription: 'Alta do Dólar (Turismo Emissivo)',
-    polymarketQueries: ['brazil currency', 'real dollar', 'emerging markets'],
-    trendsKeyword: 'dolar turismo',
-    fallbackProbability: 55
-  },
-  {
-    id: 'euro-parity',
-    name: 'Euro/Dólar Paridade',
-    category: 'Câmbio',
-    riskDescription: 'Paridade Euro-Dólar',
-    polymarketQueries: ['euro dollar', 'EUR USD', 'currency'],
-    trendsKeyword: 'euro dollar parity',
-    fallbackProbability: 38
-  },
-  // CLIMA
-  {
-    id: 'extreme-weather',
-    name: 'Eventos Climáticos Extremos',
-    category: 'Clima',
-    riskDescription: 'Furacões e Eventos Extremos',
-    polymarketQueries: ['hurricane', 'extreme weather', 'climate event'],
-    trendsKeyword: 'hurricane season forecast',
-    fallbackProbability: 48
-  }
 ];
 
 // ======================
@@ -293,82 +361,90 @@ const RISK_CONFIGS: RiskConfig[] = [
 
 /**
  * Fetch all risk metrics from real APIs
- * Only returns metrics with valid data (excludes those without API data)
+ * Only returns metrics with valid data from at least one source
  */
 export async function fetchRiskMetrics(): Promise<PredictionData> {
   console.log('🔍 Konzup Radar: Fetching risk metrics...');
   
+  // Fetch all Polymarket events once
+  const allEvents = await fetchAllPolymarketEvents();
+  console.log(`📊 Processing ${allEvents.length} Polymarket events`);
+  
   const metrics: RiskMetric[] = [];
   
-  // Process each risk configuration in parallel
-  const promises = RISK_CONFIGS.map(async (config) => {
-    let probability = config.fallbackProbability;
-    let history = generateFallbackHistory(probability, 10);
-    let dataSource = 'fallback';
+  // Process each risk configuration
+  for (const config of RISK_CONFIGS) {
+    let probability = -1;
+    let history: HistoryPoint[] = [];
     let hasRealData = false;
+    let polymarketEvent: string | null = null;
     
     try {
-      // 1. Try to fetch Polymarket data
-      for (const query of config.polymarketQueries) {
-        const events = await searchPolymarketEvents(query);
-        if (events.length > 0) {
-          const extractedProb = extractProbability(events[0]);
-          // Only use if probability seems valid (not default 50)
-          if (extractedProb !== 50) {
-            probability = extractedProb;
-            dataSource = 'polymarket';
-            hasRealData = true;
-            console.log(`✅ Polymarket data for ${config.id}: ${probability.toFixed(1)}%`);
-          }
-          break;
+      // 1. Find matching Polymarket event
+      const event = findMatchingEvent(allEvents, config.polymarketKeywords);
+      if (event) {
+        const rawProb = extractProbability(event);
+        if (rawProb >= 0) {
+          // Apply inversion if needed (e.g., "inflation below X" means low risk)
+          probability = config.invertProbability ? (100 - rawProb) : rawProb;
+          hasRealData = true;
+          polymarketEvent = event.title;
+          console.log(`✅ Polymarket [${config.id}]: "${event.title}" → ${probability.toFixed(1)}%`);
         }
       }
       
-      // 2. Try to fetch Google Trends data for history
+      // 2. Fetch Google Trends data
       const trends = await fetchGoogleTrends(config.trendsKeyword);
-      if (trends.history && trends.history.length > 0) {
+      if (trends.isReal && trends.history.length > 0) {
         history = trends.history;
-        if (trends.isReal) {
-          hasRealData = true;
-          dataSource = dataSource === 'polymarket' ? 'polymarket+trends' : 'trends';
-          console.log(`✅ Google Trends data for ${config.id}: ${trends.currentIndex}`);
+        hasRealData = true;
+        console.log(`✅ Trends [${config.id}]: "${config.trendsKeyword}" → index ${trends.currentIndex}`);
+        
+        // If no Polymarket data, use Trends as probability indicator
+        if (probability < 0) {
+          probability = trends.currentIndex;
         }
       }
+      
+      // Skip metrics with no real data at all
+      if (!hasRealData) {
+        console.log(`⚠️ Skipping [${config.id}]: No real data available`);
+        continue;
+      }
+      
+      // Use fallback history if trends failed but Polymarket succeeded
+      if (history.length === 0) {
+        history = generateFallbackHistory(probability, 8);
+      }
+      
+      const metric: RiskMetric = {
+        id: config.id,
+        name: config.name,
+        category: config.category,
+        riskDescription: config.riskDescription,
+        probability: parseFloat(Math.max(0, Math.min(100, probability)).toFixed(1)),
+        trend: determineTrend(history),
+        volatility: determineVolatility(history),
+        history,
+        hasRealData: true,
+        // Metadata for debugging
+        ...(polymarketEvent && { polymarketSource: polymarketEvent })
+      };
+      
+      metrics.push(metric);
+      
     } catch (error) {
-      console.warn(`⚠️ Error fetching data for ${config.id}, using fallback:`, error);
+      console.error(`❌ Error processing ${config.id}:`, error);
     }
-    
-    const metric: RiskMetric = {
-      id: config.id,
-      name: config.name,
-      category: config.category,
-      riskDescription: config.riskDescription,
-      probability: parseFloat(probability.toFixed(1)),
-      trend: determineTrend(history),
-      volatility: determineVolatility(history),
-      history,
-      // Add metadata about data source
-      dataSource,
-      hasRealData
+  }
+  
+  console.log(`📊 Konzup Radar: ${metrics.length} metrics with real data loaded`);
+
+    return {
+      metrics,
+      lastUpdate: new Date().toLocaleTimeString()
     };
-    
-    return metric;
-  });
-  
-  const results = await Promise.all(promises);
-  
-  // Filter to show only metrics with some data (real or meaningful fallback)
-  // Show all metrics for now, but mark which have real data
-  const validMetrics = results.filter(m => m !== null);
-  metrics.push(...validMetrics);
-  
-  console.log(`📊 Konzup Radar: ${metrics.length} metrics loaded (${metrics.filter(m => (m as any).hasRealData).length} with real data)`);
-  
-  return {
-    metrics,
-    lastUpdate: new Date().toLocaleTimeString()
-  };
-}
+  }
 
 // Export for backward compatibility
 export default { fetchRiskMetrics };

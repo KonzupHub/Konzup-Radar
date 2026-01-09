@@ -236,6 +236,80 @@ function generateMockHistory(baseValue, volatility, days = 30) {
 }
 
 // ======================
+// GEMINI AI INSIGHTS
+// ======================
+
+/**
+ * POST /api/gemini/insight
+ * Generate AI insight for a risk metric using Gemini
+ */
+app.post('/api/gemini/insight', async (req, res) => {
+  const apiKey = process.env.GEMINI_API_KEY;
+  
+  if (!apiKey) {
+    console.warn('GEMINI_API_KEY not configured');
+    return res.status(503).json({
+      error: 'AI service not configured',
+      insight: null
+    });
+  }
+  
+  const { metric, lang = 'pt' } = req.body;
+  
+  if (!metric) {
+    return res.status(400).json({ error: 'Metric data required' });
+  }
+  
+  const langNames = { pt: 'Português', en: 'English', es: 'Español' };
+  
+  const prompt = `
+    Aja como o Konzup Radar, um consultor de inteligência preditiva para o mercado de turismo. 
+    DATA: Janeiro de 2026.
+    IDIOMA DA RESPOSTA: ${langNames[lang] || 'Português'}.
+    RISCO: ${metric.riskDescription}
+    MÉTRICA ATUAL: ${metric.probability}% de probabilidade.
+    TENDÊNCIA: ${metric.trend}.
+    VOLATILIDADE: ${metric.volatility}.
+
+    Forneça um "Insight Konzup": uma frase única, curta, executiva e de alto impacto para CEOs de turismo sobre a perspectiva e o impacto desse risco nas operações. 
+    Responda obrigatoriamente em ${langNames[lang] || 'Português'}.
+    Seja direto e use um tom sério de terminal financeiro.
+    IMPORTANTE: Apresente como uma análise de probabilidade, não como um fato consumado.
+    NÃO use formatação markdown como asteriscos (**). Nunca use negrito.
+    Responda APENAS com o insight, sem prefixos ou explicações.
+  `;
+
+  try {
+    const response = await axios.post(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+      {
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: {
+          temperature: 0.7,
+          topP: 0.9,
+          maxOutputTokens: 200
+        }
+      },
+      {
+        headers: { 'Content-Type': 'application/json' },
+        timeout: 30000
+      }
+    );
+
+    const text = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    const cleanText = text?.trim().replace(/\*\*/g, '').replace(/\*/g, '') || null;
+    
+    res.json({ insight: cleanText });
+  } catch (error) {
+    console.error('Gemini API Error:', error.response?.data || error.message);
+    res.status(500).json({
+      error: 'Failed to generate insight',
+      insight: null
+    });
+  }
+});
+
+// ======================
 // HEALTH CHECK
 // ======================
 
@@ -245,7 +319,8 @@ app.get('/api/health', (req, res) => {
     timestamp: new Date().toISOString(),
     services: {
       polymarket: 'available',
-      googleTrends: 'available'
+      googleTrends: 'available',
+      gemini: process.env.GEMINI_API_KEY ? 'available' : 'not configured'
     }
   });
 });
