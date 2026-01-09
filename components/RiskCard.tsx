@@ -20,9 +20,9 @@ const RiskCard: React.FC<RiskCardProps> = ({ metric, lang, onInfoClick }) => {
 
   const TrendIcon = () => {
     switch (metric.trend) {
-      case 'up': return <TrendingUp className="w-4 h-4 text-red-500" />;
-      case 'down': return <TrendingDown className="w-4 h-4 text-green-500" />;
-      default: return <Minus className="w-4 h-4 text-slate-400" />;
+      case 'up': return <TrendingUp className="w-4 h-4 text-red-500" />;      // Risco subindo = ruim = vermelho
+      case 'down': return <TrendingDown className="w-4 h-4 text-emerald-500" />; // Risco descendo = bom = verde
+      default: return <Minus className="w-4 h-4 text-amber-500" />;           // Estável = atenção = amarelo
     }
   };
 
