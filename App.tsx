@@ -249,8 +249,8 @@ const App: React.FC = () => {
                     
                     {/* Formula Box */}
                     <div className="bg-gradient-to-r from-purple-500/10 to-cyan-500/10 p-6 rounded-xl border border-purple-500/20">
-                      <p className="text-lg font-bold text-white mb-4">Fórmula de Cruzamento:</p>
-                      <p className="text-2xl font-mono font-bold text-cyan-400">Risco = (Polymarket × 70%) + (Trends × 30%)</p>
+                      <p className="text-lg font-bold text-white mb-4">{t.crossingFormula}</p>
+                      <p className="text-2xl font-mono font-bold text-cyan-400">Risk = (Polymarket × 70%) + (Trends × 30%)</p>
                     </div>
 
                     {/* Two columns explanation */}
@@ -258,38 +258,38 @@ const App: React.FC = () => {
                       <div className="bg-white/5 p-5 rounded-xl border border-white/10">
                         <div className="flex items-center gap-2 mb-3">
                           <div className="w-3 h-3 rounded-full bg-purple-500"></div>
-                          <span className="font-bold text-white">Polymarket (peso 70%)</span>
+                          <span className="font-bold text-white">{t.polymarketWeight}</span>
                         </div>
                         <ul className="text-slate-400 space-y-2 text-sm">
-                          <li>• São <strong className="text-white">apostas financeiras reais</strong></li>
-                          <li>• Pessoas colocam dinheiro de verdade</li>
-                          <li>• Se muita gente aposta que algo vai acontecer, a probabilidade sobe</li>
-                          <li>• <strong className="text-cyan-400">Dinheiro real = mais confiável</strong></li>
+                          <li>• {t.polyBullet1}</li>
+                          <li>• {t.polyBullet2}</li>
+                          <li>• {t.polyBullet3}</li>
+                          <li>• <strong className="text-cyan-400">{t.polyBullet4}</strong></li>
                         </ul>
                       </div>
                       
                       <div className="bg-white/5 p-5 rounded-xl border border-white/10">
                         <div className="flex items-center gap-2 mb-3">
                           <div className="w-3 h-3 rounded-full bg-cyan-500"></div>
-                          <span className="font-bold text-white">Google Trends (peso 30%)</span>
+                          <span className="font-bold text-white">{t.trendsWeight}</span>
                         </div>
                         <ul className="text-slate-400 space-y-2 text-sm">
-                          <li>• <strong className="text-white">Volume de buscas</strong> no Google</li>
-                          <li>• Mostra o que as pessoas estão pesquisando</li>
-                          <li>• Se muita gente pesquisa "greve aérea", indica preocupação</li>
-                          <li>• <strong className="text-cyan-400">Mostra o "humor" do mercado</strong></li>
+                          <li>• {t.trendsBullet1}</li>
+                          <li>• {t.trendsBullet2}</li>
+                          <li>• {t.trendsBullet3}</li>
+                          <li>• <strong className="text-cyan-400">{t.trendsBullet4}</strong></li>
                         </ul>
                       </div>
                     </div>
 
                     {/* Practical Example */}
                     <div className="bg-amber-500/10 p-6 rounded-xl border border-amber-500/20">
-                      <p className="font-bold text-amber-400 mb-3">📊 Exemplo Prático:</p>
+                      <p className="font-bold text-amber-400 mb-3">📊 {t.practicalExample}</p>
                       <div className="space-y-2 text-slate-300">
-                        <p>• Polymarket diz: <strong className="text-white">75% de chance</strong> de petróleo passar de $90</p>
-                        <p>• Google Trends mostra: <strong className="text-white">+20%</strong> de buscas por "passagem aérea cara"</p>
+                        <p>• {t.examplePoly}</p>
+                        <p>• {t.exampleTrends}</p>
                         <p className="mt-3 pt-3 border-t border-amber-500/20">
-                          <strong className="text-red-400">→ Resultado:</strong> Sinal vermelho para custos aéreos no turismo
+                          <strong className="text-red-400">→ {t.exampleResult}</strong>
                         </p>
                       </div>
                     </div>
@@ -297,8 +297,7 @@ const App: React.FC = () => {
                     {/* Important Note */}
                     <div className="bg-red-500/10 p-4 rounded-xl border border-red-500/20">
                       <p className="text-red-400 text-sm">
-                        <strong>⚠️ Importante:</strong> Estes são <strong>indicadores de probabilidade</strong>, não fatos. 
-                        O mercado pode errar. Use como uma ferramenta de apoio à decisão, nunca como certeza absoluta.
+                        <strong>⚠️ {t.importantNote}</strong> {t.importantNoteDesc}
                       </p>
                     </div>
                   </div>
