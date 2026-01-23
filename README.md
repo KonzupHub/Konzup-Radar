@@ -1,298 +1,507 @@
-# 🛰️ Konzup Radar
+# 🎯 Konzup Radar
 
-**Inteligência Preditiva para o Mercado de Turismo**
+**Sistema de Monitoramento de Riscos para o Mercado de Turismo**
 
-Dashboard em tempo real que monitora riscos e oportunidades para o setor de turismo, cruzando dados de mercados de previsão (Polymarket) com tendências de busca (Google Trends).
+O Konzup Radar é uma plataforma que monitora riscos globais que podem impactar o setor de turismo, fornecendo informações em tempo real para operadores e agências de viagens tomarem decisões informadas.
 
-🌐 **Demo:** [konzup-radar-885936675930.us-central1.run.app](https://konzup-radar-885936675930.us-central1.run.app)
-
----
-
-## 📊 O Que É e Para Quem Serve
-
-O Konzup Radar é uma ferramenta de **inteligência preditiva** desenhada para profissionais do turismo:
-
-- **Agências de Viagens Corporativas** - Antecipar custos de passagens e riscos operacionais
-- **Operadoras de Turismo** - Planejar pacotes considerando cenários geopolíticos
-- **Hotéis e Resorts** - Ajustar estratégias baseado em demanda projetada
-- **DMCs e Receptivos** - Preparar-se para variações de fluxo turístico
-
-### ⚠️ IMPORTANTE: Probabilidades, Não Fatos
-
-Os dados exibidos são **PROBABILIDADES** baseadas em mercados de previsão e tendências de busca, **NÃO são fatos consumados**. Eles representam o consenso do mercado sobre eventos futuros.
+![Status](https://img.shields.io/badge/status-production-brightgreen)
+![Deploy](https://img.shields.io/badge/deploy-Google%20Cloud%20Run-blue)
+![Bot](https://img.shields.io/badge/bot-Cloud%20Functions-orange)
 
 ---
 
-## 🎯 Riscos Monitorados (8 Métricas)
+## 📋 Índice
 
-| Categoria | Métrica | Fonte Polymarket | Interpretação |
-|-----------|---------|------------------|---------------|
-| **Geopolítica** | Recessão EUA | "Negative GDP growth in 2025?" | YES = risco direto |
-| **Geopolítica** | Guerra Ucrânia | "Russia x Ukraine ceasefire..." | YES = bom → **invertido** |
-| **Geopolítica** | China-Taiwan | "Will China invade Taiwan...?" | YES = risco direto |
-| **Geopolítica** | Crise Europa | "Macron out by...?" | YES = risco direto |
-| **Câmbio** | Inflação Brasil | "Brazil inflation below 5.5%?" | YES = bom → **invertido** |
-| **Câmbio** | Inflação EUA | "Will inflation reach 5%...?" | YES = risco direto |
-| **Clima** | Clima Extremo | "Will 2025 be hottest year?" | YES = risco direto |
-| **Custo Aéreo** | Combustível | Google Trends "jet fuel prices" | Trends-based |
-
-### Lógica de Inversão
-
-Alguns eventos no Polymarket são formulados de forma que **YES = bom**:
-- "Inflação abaixo de 5.5%?" → YES significa inflação controlada (bom!)
-- "Cessar-fogo na Ucrânia?" → YES significa paz (bom!)
-
-Nesses casos, **invertemos** a probabilidade para mostrar o RISCO:
-```
-Risco = 100% - Probabilidade_YES
-```
-
-**Exemplo Brasil:**
-- Polymarket: 99.85% chance de inflação ficar ABAIXO de 5.5%
-- Inversão: 100 - 99.85 = **0.15% risco** de inflação alta
-- Dashboard mostra: ~0% (verde, baixo risco) ✅
+1. [O que é](#-o-que-é)
+2. [Para que serve](#-para-que-serve)
+3. [Como funciona](#-como-funciona)
+4. [Arquitetura](#-arquitetura)
+5. [Tecnologias](#-tecnologias)
+6. [Instalação Local](#-instalação-local)
+7. [Deploy em Produção](#-deploy-em-produção)
+8. [Bot Scanner Semanal](#-bot-scanner-semanal)
+9. [APIs e Integrações](#-apis-e-integrações)
+10. [Estrutura do Código](#-estrutura-do-código)
+11. [Contribuição](#-contribuição)
 
 ---
 
-## 🧮 O Algoritmo: Como Funciona
+## 🎯 O que é
 
-O Konzup Radar cruza **duas fontes de dados** para gerar probabilidades de risco:
+O Konzup Radar é um painel inteligente que:
 
-### Fórmula
-
-```
-Risco Final = Probabilidade Polymarket (primária) + Google Trends (histórico)
-```
+- **Monitora indicadores globais** em tempo real
+- **Calcula índices de confiança** para o mercado de turismo
+- **Detecta automaticamente novos riscos** relevantes
+- **Exibe tendências visuais** com gráficos históricos
+- **Suporta 3 idiomas**: Português, Inglês e Espanhol
 
 ### Fontes de Dados
 
-#### 1. Polymarket - "A Aposta do Mercado"
-
-**O que é:** Plataforma de mercados de previsão onde pessoas apostam dinheiro real em eventos futuros.
-
-**Por que funciona:** O dinheiro real torna as probabilidades mais robustas.
-
-**Formato da API:**
-```json
-{
-  "title": "Negative GDP growth in 2025?",
-  "outcomes": ["Yes", "No"],
-  "outcomePrices": ["0.018", "0.982"]  // 1.8% YES, 98.2% NO
-}
-```
-
-**API:** `https://gamma-api.polymarket.com/events` (gratuita, sem chave)
-
-#### 2. Google Trends - "A Intenção de Busca"
-
-**O que é:** Volume de buscas no Google (índice 0-100) nos últimos 30 dias.
-
-**Como usamos:** Crawler Python (`pytrends`) que coleta dados históricos para cada termo de risco.
-
-**Crawler:** `scripts/googleTrends.py`
+| Fonte | O que fornece |
+|-------|---------------|
+| **Polymarket** | Probabilidades de eventos de previsão (mercados preditivos) |
+| **Google Trends** | Tendências de busca relacionadas a turismo |
+| **Bot Scanner** | Descoberta automática de novos eventos relevantes |
 
 ---
 
-## 🏗️ Arquitetura Técnica
+## 🎪 Para que serve
 
-### Stack
+### Público-alvo
 
-- **Frontend:** React 19 + TypeScript + Tailwind CSS
-- **Backend:** Node.js (Express 5) - Proxy para APIs
-- **Crawler:** Python 3 (pytrends) - Google Trends
-- **AI:** Google Gemini 2.0 Flash - Insights em linguagem natural
-- **Deploy:** Google Cloud Run
-- **Analytics:** Google Analytics (G-CBVVY75WZ0)
+- **Operadores de turismo** que precisam antecipar riscos
+- **Agências de viagens** que querem informar clientes
+- **Consultores** do setor de viagens e eventos
+- **Investidores** no setor de turismo/hospitalidade
 
-### Estrutura de Arquivos
+### Indicadores Monitorados
 
-```
-konzup-radar/
-├── App.tsx                 # Componente principal React
-├── components/
-│   ├── RiskCard.tsx        # Card de risco individual
-│   └── InfoModal.tsx       # Modal de informações
-├── services/
-│   ├── dataService.ts      # Integração Polymarket + Trends
-│   └── geminiService.ts    # Integração Gemini AI
-├── scripts/
-│   └── googleTrends.py     # Crawler Python para Trends
-├── server.js               # Backend Express (proxy + API)
-├── Dockerfile              # Container para Cloud Run
-├── translations.ts         # i18n (PT/EN/ES)
-└── types.ts                # TypeScript interfaces
-```
-
-### Fluxo de Dados
-
-```
-┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐
-│   Polymarket    │────▶│   server.js      │◀────│  Google Trends  │
-│   Gamma API     │     │   (Express)      │     │  (pytrends.py)  │
-└─────────────────┘     └────────┬─────────┘     └─────────────────┘
-                                 │
-                                 ▼
-                        ┌────────────────┐
-                        │  dataService   │
-                        │  (Frontend)    │
-                        └────────┬───────┘
-                                 │
-                        ┌────────▼───────┐
-                        │  Gemini AI     │
-                        │  (Insights)    │
-                        └────────┬───────┘
-                                 │
-                        ┌────────▼───────┐
-                        │   RiskCard     │
-                        │   (UI)         │
-                        └────────────────┘
-```
+| Categoria | Indicadores |
+|-----------|-------------|
+| **🛫 Custo Aéreo** | Custos de passagens, combustível, tarifas |
+| **🌍 Geopolítica** | Conflitos, eleições, instabilidade política |
+| **💰 Câmbio** | Dólar/Real, política monetária, economia Brasil |
+| **🌡️ Clima** | Eventos extremos, furacões, mudanças climáticas |
+| **🏥 Saúde Global** | Pandemias, surtos, riscos sanitários |
+| **🏗️ Infraestrutura** | Turismo doméstico, conectividade aérea |
 
 ---
 
-## 🚀 Como Rodar Localmente
+## ⚙️ Como funciona
 
-### Pré-requisitos
+### 1. Coleta de Dados
 
-- Node.js 20+
-- Python 3.11+
-- Conta Google Cloud (para Gemini API)
-
-### Instalação
-
-```bash
-# Clone o repositório
-git clone https://github.com/KonzupHub/Konzup-Radar.git
-cd Konzup-Radar
-
-# Instale dependências Node
-npm install
-
-# Instale dependências Python
-pip install -r requirements-python.txt
-
-# Configure variáveis de ambiente
-cp .env.example .env
-# Edite .env e adicione sua GEMINI_API_KEY
+```
+┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
+│   Polymarket    │────▶│   Backend       │────▶│   Frontend      │
+│   (Previsões)   │     │   (Proxy/Node)  │     │   (React/Vite)  │
+└─────────────────┘     └─────────────────┘     └─────────────────┘
+                               │
+                               │
+┌─────────────────┐            │
+│  Google Trends  │────────────┘
+│  (via Python)   │
+└─────────────────┘
 ```
 
-### Executar
+### 2. Índice de Confiança
 
-```bash
-# Modo desenvolvimento (frontend + backend)
-npm run dev:full
+O sistema calcula um **Índice de Confiança** baseado na volatilidade dos indicadores:
 
-# Ou separadamente:
-npm run dev      # Frontend Vite (porta 3000)
-npm run server   # Backend Express (porta 3001)
+```javascript
+// Média ponderada das probabilidades dos riscos
+Índice = 100 - (volatilidade média dos indicadores)
 ```
 
-Acesse: `http://localhost:3000`
+**Classificação:**
+- 🟢 **Confiança > 60**: Cenário Estável
+- 🟡 **Confiança 40-60**: Atenção Moderada  
+- 🔴 **Confiança < 40**: Alerta Volátil
+
+### 3. Bot Scanner Semanal
+
+O bot roda automaticamente **toda segunda-feira às 6h** e:
+
+1. Busca todos os eventos ativos no Polymarket (~1000 eventos)
+2. Filtra eventos relevantes para turismo (~250 eventos)
+3. Detecta novos eventos ainda não conhecidos
+4. Salva no Firestore para exibição dinâmica
 
 ---
 
-## ☁️ Deploy no Google Cloud Run
+## 🏗️ Arquitetura
 
-### Via CLI
-
-```bash
-# Build e deploy
-gcloud run deploy konzup-radar \
-  --source . \
-  --region us-central1 \
-  --allow-unauthenticated \
-  --set-env-vars "NODE_ENV=production,GEMINI_API_KEY=sua_chave"
+```
+┌──────────────────────────────────────────────────────────────────┐
+│                        FRONTEND (React)                          │
+│                     https://konzup-radar.run.app                 │
+├──────────────────────────────────────────────────────────────────┤
+│                        BACKEND (Node.js)                         │
+│                     Express + Python (pytrends)                  │
+├───────────────────┬──────────────────────────────────────────────┤
+│  APIs EXTERNAS    │           GOOGLE CLOUD                       │
+├───────────────────┼──────────────────────────────────────────────┤
+│  ✅ Polymarket    │  ✅ Cloud Run (App principal)                │
+│  ✅ Google Trends │  ✅ Cloud Functions (Bot Scanner)            │
+│                   │  ✅ Cloud Scheduler (Agendamento)            │
+│                   │  ✅ Firestore (Eventos descobertos)          │
+│                   │  ✅ Cloud Build (CI/CD)                      │
+└───────────────────┴──────────────────────────────────────────────┘
 ```
 
----
+### URLs de Produção
 
-## 📡 Endpoints da API
-
-| Endpoint | Método | Descrição |
-|----------|--------|-----------|
-| `/api/polymarket/events` | GET | Lista eventos Polymarket ativos |
-| `/api/polymarket/search/:query` | GET | Busca eventos por termo |
-| `/api/trends/:keyword` | GET | Dados Google Trends para keyword |
-| `/api/gemini/insight` | POST | Gera insight AI para métrica |
-| `/api/health` | GET | Health check dos serviços |
-
----
-
-## 🔐 Segurança
-
-- **GEMINI_API_KEY** nunca é exposta no frontend
-- **Input sanitization** no endpoint de Trends (previne command injection)
-- **spawn()** usado em vez de exec() para execução segura de Python
-- **CORS** configurado para ambiente de produção
-- **LGPD compliant** - usa apenas dados públicos e anonimizados
-
----
-
-## 📈 Dados em Tempo Real (Janeiro 2026)
-
-| Métrica | Evento Polymarket | Probabilidade |
-|---------|-------------------|---------------|
-| Recessão EUA | "Negative GDP growth in 2025?" | ~1.5% |
-| Guerra Ucrânia | "Ceasefire by 2026?" | ~85% risco (invertido) |
-| China-Taiwan | "China invade Taiwan by 2026?" | ~12.5% |
-| Inflação Brasil | "Inflation below 5.5%?" | ~0% risco (invertido) |
-| Clima Extremo | "Hottest year on record?" | ~0.3% |
-
-*Probabilidades atualizadas em tempo real*
-
----
-
-## 🌐 Internacionalização
-
-O dashboard suporta 3 idiomas com traduções completas:
-- 🇧🇷 Português (padrão)
-- 🇺🇸 English
-- 🇪🇸 Español
-
-### Elementos Traduzidos
-- Interface geral (botões, títulos, textos fixos)
-- Categorias de risco (Geopolítica → Geopolitics)
-- Descrições de risco (Risco de Recessão → US Recession Risk)
-- Popup de informações
-- Insights do Gemini AI
-- Página "Como funciona" completa
-
-### Índices de Sentimento (Dinâmicos)
-- **Índex Intenção:** Calculado em tempo real baseado nas tendências (up/down/stable) de todos os indicadores. Positivo = demanda crescente, Negativo = demanda retraindo.
-- **Índex Confiança:** Calculado em tempo real baseado na volatilidade dos indicadores. Quanto menor a volatilidade média, maior a confiança (0-100).
-
-*Ambos os índices atualizam automaticamente quando você clica em "Refresh".*
-
-O horário exibido é **local do usuário** (`toLocaleTimeString()`).
+| Serviço | URL |
+|---------|-----|
+| **App Principal** | https://konzup-radar-885936675930.us-central1.run.app |
+| **Bot Scanner** | https://us-central1-gen-lang-client-0598434360.cloudfunctions.net/scanPolymarket |
+| **API Eventos** | https://us-central1-gen-lang-client-0598434360.cloudfunctions.net/getDiscoveredEvents |
 
 ---
 
 ## 🛠️ Tecnologias
 
-| Tecnologia | Versão | Uso |
-|------------|--------|-----|
-| React | 19 | UI moderna com hooks |
-| Vite | 6 | Build tool |
-| Tailwind CSS | CDN | Styling |
-| Express | 5 | Backend HTTP |
-| Axios | 1.x | Cliente HTTP |
-| Recharts | 3.x | Gráficos |
-| pytrends | 4.9 | Google Trends API |
-| Google Gemini | 2.0 Flash | LLM para insights |
-| Google Cloud Run | - | Serverless deploy |
+### Frontend
+- **React 18** - Interface do usuário
+- **TypeScript** - Tipagem estática
+- **Vite** - Build tool e dev server
+- **Tailwind CSS** - Estilização
+- **Recharts** - Gráficos
+- **Lucide React** - Ícones
+
+### Backend
+- **Node.js 20** - Runtime
+- **Express** - Servidor HTTP
+- **Python 3** - Script para Google Trends
+- **pytrends** - Biblioteca para Google Trends API
+
+### Google Cloud
+- **Cloud Run** - Hospedagem do app
+- **Cloud Functions** - Bot scanner
+- **Cloud Scheduler** - Agendamento semanal
+- **Firestore** - Banco de dados NoSQL
+- **Cloud Build** - CI/CD
 
 ---
 
-## 📄 Licença
+## 💻 Instalação Local
 
-MIT License - Konzup Hub © 2026
+### Pré-requisitos
+- Node.js 18+
+- Python 3.10+
+- npm ou yarn
+
+### 1. Clone o repositório
+
+```bash
+git clone https://github.com/KonzupHub/Konzup-Radar.git
+cd Konzup-Radar
+```
+
+### 2. Instale as dependências
+
+```bash
+# Dependências Node.js
+npm install
+
+# Dependências Python (em virtual env)
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements-python.txt
+```
+
+### 3. Execute localmente
+
+```bash
+# Terminal 1: Backend
+node server.js
+
+# Terminal 2: Frontend
+npm run dev
+```
+
+Acesse: http://localhost:5173
+
+---
+
+## 🚀 Deploy em Produção
+
+### Deploy do App Principal
+
+```bash
+# Build + Deploy no Cloud Run
+npm run build
+gcloud run deploy konzup-radar \
+  --source . \
+  --platform managed \
+  --region us-central1 \
+  --allow-unauthenticated
+```
+
+### Deploy do Bot Scanner
+
+```bash
+cd bot-scanner
+
+# Instalar dependências
+npm install
+
+# Deploy das funções
+npm run deploy-all
+
+# Criar agendamento semanal
+npm run create-scheduler
+```
+
+---
+
+## 🤖 Bot Scanner Semanal
+
+### O que faz
+
+O bot é uma **Cloud Function** que roda automaticamente toda segunda-feira às 6h UTC:
+
+1. **Busca** todos os eventos do Polymarket (até 1000)
+2. **Filtra** eventos relevantes para turismo usando keywords
+3. **Compara** com eventos já conhecidos no Firestore
+4. **Salva** novos eventos descobertos
+5. **Registra** logs de execução
+
+### Keywords de Busca
+
+O bot busca eventos que contenham estas palavras:
+
+```javascript
+const TOURISM_KEYWORDS = [
+  // Turismo direto
+  'travel', 'tourism', 'vacation', 'airline', 'flight', 'hotel',
+  
+  // Regiões
+  'brazil', 'europe', 'asia', 'caribbean', 'latin america',
+  
+  // Economia
+  'recession', 'inflation', 'oil price', 'tariff',
+  
+  // Geopolítica
+  'war', 'conflict', 'ceasefire', 'sanctions',
+  
+  // Clima
+  'hurricane', 'earthquake', 'climate'
+];
+```
+
+### Categorização Automática
+
+Eventos são automaticamente classificados:
+
+| Categoria | Keywords |
+|-----------|----------|
+| Custo Aéreo | airline, aviation, flight, fuel, oil |
+| Geopolítica | war, conflict, election, sanctions |
+| Saúde Global | pandemic, outbreak, virus, disease |
+| Câmbio | currency, dollar, inflation, recession |
+| Clima | hurricane, earthquake, climate, flood |
+
+### Testar Manualmente
+
+```bash
+# Executar varredura manualmente
+curl -X POST https://us-central1-gen-lang-client-0598434360.cloudfunctions.net/scanPolymarket
+
+# Ver eventos descobertos
+curl https://us-central1-gen-lang-client-0598434360.cloudfunctions.net/getDiscoveredEvents
+```
+
+### Estrutura do Bot
+
+```
+bot-scanner/
+├── index.js          # Código principal das Cloud Functions
+├── package.json      # Dependências e scripts
+├── test.js           # Script de teste local
+└── deploy.sh         # Script de deploy automatizado
+```
+
+---
+
+## 🔌 APIs e Integrações
+
+### Polymarket API
+
+```javascript
+// Endpoint
+GET https://gamma-api.polymarket.com/events?closed=false&limit=100
+
+// Resposta
+{
+  "id": "12345",
+  "title": "Russia x Ukraine ceasefire by 2026?",
+  "markets": [{
+    "outcomePrices": "[0.43, 0.57]"  // YES: 43%, NO: 57%
+  }]
+}
+```
+
+### Google Trends (via Backend)
+
+```bash
+# Endpoint interno
+GET http://localhost:3001/api/trends/turismo%20brasil
+
+# Resposta
+{
+  "keyword": "turismo brasil",
+  "currentIndex": 75,
+  "history": [
+    { "date": "2026-01-01", "value": 72 },
+    { "date": "2026-01-08", "value": 75 }
+  ],
+  "isReal": true
+}
+```
+
+### API de Eventos Descobertos
+
+```bash
+# Endpoint público
+GET https://us-central1-gen-lang-client-0598434360.cloudfunctions.net/getDiscoveredEvents
+
+# Resposta
+{
+  "success": true,
+  "count": 20,
+  "events": [{
+    "id": "russia-ukraine-ceasefire",
+    "title": "Russia x Ukraine ceasefire by 2026?",
+    "category": "Geopolítica",
+    "probability": 43.5,
+    "discoveredAt": "2026-01-23T14:59:54Z"
+  }]
+}
+```
+
+---
+
+## 📁 Estrutura do Código
+
+```
+Konzup-Radar/
+│
+├── 📄 App.tsx                 # Componente principal React
+├── 📄 index.tsx               # Entry point
+├── 📄 types.ts                # Tipos TypeScript
+├── 📄 translations.ts         # Traduções PT/EN/ES
+├── 📄 constants.tsx           # Constantes
+│
+├── 📁 components/
+│   ├── RiskCard.tsx           # Card de indicador de risco
+│   └── InfoModal.tsx          # Modal informativo
+│
+├── 📁 services/
+│   ├── dataService.ts         # Busca dados Polymarket/Trends
+│   └── geminiService.ts       # (Reservado para IA futura)
+│
+├── 📁 scripts/
+│   └── googleTrends.py        # Script Python para Trends
+│
+├── 📁 bot-scanner/            # Bot semanal
+│   ├── index.js               # Cloud Functions
+│   ├── package.json           # Dependências
+│   ├── test.js                # Testes locais
+│   └── deploy.sh              # Script de deploy
+│
+├── 📄 server.js               # Backend Express
+├── 📄 Dockerfile              # Container para Cloud Run
+├── 📄 cloudbuild.yaml         # CI/CD Google Cloud
+├── 📄 app.yaml                # Configuração Cloud Run
+│
+├── 📄 package.json            # Dependências Node
+├── 📄 requirements-python.txt # Dependências Python
+├── 📄 vite.config.ts          # Configuração Vite
+└── 📄 tsconfig.json           # Configuração TypeScript
+```
+
+---
+
+## 🔧 Configuração de Riscos
+
+Os indicadores são configurados em `services/dataService.ts`:
+
+```typescript
+const RISK_CONFIGS: RiskConfig[] = [
+  {
+    id: 'brazil-tourism',
+    name: 'Demanda Turismo Brasil',
+    category: 'Infraestrutura',
+    riskDescription: 'Interesse em Turismo Doméstico',
+    polymarketKeywords: ['brazil', 'election', 'runoff'],
+    trendsKeyword: 'pacote viagem brasil',
+  },
+  // ... mais configurações
+];
+```
+
+### Adicionar Novo Indicador
+
+1. Adicione a configuração em `RISK_CONFIGS`
+2. Adicione traduções em `translations.ts`
+3. Faça deploy: `npm run build && gcloud run deploy ...`
+
+---
+
+## 🌐 Traduções
+
+O sistema suporta 3 idiomas. Exemplo em `translations.ts`:
+
+```typescript
+export const translations = {
+  pt: {
+    title: 'Konzup Radar',
+    marketSummary: 'Mercado de Turismo 2026',
+    confidenceStable: 'Cenário Estável',
+    // ...
+  },
+  en: {
+    title: 'Konzup Radar',
+    marketSummary: 'Tourism Market 2026',
+    confidenceStable: 'Stable Scenario',
+    // ...
+  },
+  es: {
+    title: 'Konzup Radar',
+    marketSummary: 'Mercado de Turismo 2026',
+    confidenceStable: 'Escenario Estable',
+    // ...
+  }
+};
+```
+
+---
+
+## 📊 Monitoramento
+
+### Logs do App
+
+```bash
+gcloud run services logs read konzup-radar --region=us-central1 --limit=50
+```
+
+### Logs do Bot
+
+```bash
+gcloud functions logs read scanPolymarket --region=us-central1 --limit=30
+```
+
+### Status do Scheduler
+
+```bash
+gcloud scheduler jobs describe konzup-radar-weekly-scan --location=us-central1
+```
 
 ---
 
 ## 🤝 Contribuição
 
-Pull requests são bem-vindos! Para mudanças maiores, abra uma issue primeiro.
+1. Fork o repositório
+2. Crie uma branch: `git checkout -b feature/nova-funcionalidade`
+3. Commit suas mudanças: `git commit -m 'Adiciona nova funcionalidade'`
+4. Push: `git push origin feature/nova-funcionalidade`
+5. Abra um Pull Request
 
 ---
 
-**Desenvolvido por [Konzup Hub](https://konzup.com)** 🚀
+## 📜 Licença
+
+MIT © [Konzup Hub](https://konzup.com)
+
+---
+
+## 📞 Contato
+
+- **Email**: contato@konzup.com
+- **GitHub**: [@KonzupHub](https://github.com/KonzupHub)
+
+---
+
+**Feito com ❤️ para o mercado de turismo brasileiro e latino-americano**

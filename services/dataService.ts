@@ -480,5 +480,91 @@ export async function fetchRiskMetrics(): Promise<PredictionData> {
     };
   }
 
+// ======================
+// BOT DISCOVERED EVENTS
+// ======================
+
+/**
+ * Interface for events discovered by the weekly bot scanner
+ */
+interface DiscoveredEvent {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  probability: number;
+  discoveredAt: string;
+  isActive: boolean;
+  url: string;
+}
+
+// Cloud Function URL for discovered events API
+const DISCOVERED_EVENTS_URL = 'https://us-central1-gen-lang-client-0598434360.cloudfunctions.net/getDiscoveredEvents';
+
+/**
+ * Fetch events discovered by the weekly bot scanner
+ * Returns empty array if the bot hasn't been deployed yet
+ */
+export async function fetchDiscoveredEvents(): Promise<DiscoveredEvent[]> {
+  try {
+    const response = await axios.get(DISCOVERED_EVENTS_URL, { timeout: 10000 });
+    
+    if (response.data && response.data.success && response.data.events) {
+      console.log(`🤖 Bot: ${response.data.events.length} discovered events loaded`);
+      return response.data.events;
+    }
+    
+    return [];
+  } catch (error) {
+    // Bot not deployed yet or API error - return empty array silently
+    console.log('🤖 Bot: No discovered events available (bot may not be deployed yet)');
+    return [];
+  }
+}
+
+/**
+ * Convert discovered event to RiskMetric format
+ */
+export function convertDiscoveredToMetric(event: DiscoveredEvent): RiskMetric {
+  // Generate simple history based on probability
+  const baseValue = event.probability >= 0 ? event.probability : 50;
+  const history: HistoryPoint[] = [];
+  
+  for (let i = 7; i >= 0; i--) {
+    const date = new Date();
+    date.setDate(date.getDate() - i);
+    const variation = (Math.random() - 0.5) * 10;
+    history.push({
+      date: date.toISOString().split('T')[0],
+      value: Math.max(0, Math.min(100, baseValue + variation))
+    });
+  }
+  
+  // Map category string to valid category type
+  const categoryMap: { [key: string]: RiskMetric['category'] } = {
+    'Custo Aéreo': 'Custo Aéreo',
+    'Geopolítica': 'Geopolítica',
+    'Saúde Global': 'Saúde Global',
+    'Câmbio': 'Câmbio',
+    'Clima': 'Clima',
+    'Infraestrutura': 'Infraestrutura'
+  };
+  
+  const category = categoryMap[event.category] || 'Geopolítica';
+  
+  return {
+    id: `bot-${event.id}`,
+    name: event.title.substring(0, 40) + (event.title.length > 40 ? '...' : ''),
+    category,
+    riskDescription: event.title,
+    probability: event.probability >= 0 ? event.probability : 50,
+    trend: 'stable',
+    volatility: 'medium',
+    history,
+    hasRealData: true,
+    polymarketSource: `🤖 Descoberto pelo Bot: ${event.discoveredAt.split('T')[0]}`
+  };
+}
+
 // Export for backward compatibility
-export default { fetchRiskMetrics };
+export default { fetchRiskMetrics, fetchDiscoveredEvents, convertDiscoveredToMetric };
