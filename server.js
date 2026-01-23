@@ -119,10 +119,15 @@ app.get('/api/polymarket/search/:query', async (req, res) => {
 
 /**
  * Execute Python script safely using spawn (prevents command injection)
+ * Uses venv Python if available, otherwise falls back to system python3
  */
 function runPythonScript(scriptPath, args, timeout = 30000) {
   return new Promise((resolve, reject) => {
-    const process = spawn('python3', [scriptPath, ...args], {
+    // Try venv Python first, fallback to system python3
+    const venvPython = path.join(__dirname, 'venv', 'bin', 'python');
+    const pythonCmd = require('fs').existsSync(venvPython) ? venvPython : 'python3';
+    
+    const process = spawn(pythonCmd, [scriptPath, ...args], {
       timeout,
       stdio: ['pipe', 'pipe', 'pipe']
     });
@@ -198,42 +203,17 @@ app.get('/api/trends/:keyword', async (req, res) => {
   } catch (error) {
     console.error('Google Trends Error:', error.message);
     
-    // Return mock data on error
-    const mockData = {
+    // Return isReal: false with empty history (NO MOCK DATA)
+    // Card will be hidden in frontend if no real data available
+    res.json({
       keyword: sanitizedKeyword,
-      currentIndex: 50 + Math.floor(Math.random() * 30),
-      history: generateMockHistory(50, 10),
+      currentIndex: -1,
+      history: [],
       isReal: false,
       error: error.message
-    };
-    
-    res.json(mockData);
-  }
-});
-
-/**
- * Generate mock history data for fallback
- */
-function generateMockHistory(baseValue, volatility, days = 30) {
-  const history = [];
-  let currentValue = baseValue;
-  const today = new Date();
-  
-  for (let i = days; i >= 0; i--) {
-    const date = new Date(today);
-    date.setDate(today.getDate() - i);
-    
-    const change = (Math.random() - 0.5) * volatility;
-    currentValue = Math.max(0, Math.min(100, currentValue + change));
-    
-    history.push({
-      date: date.toISOString().split('T')[0],
-      value: parseFloat(currentValue.toFixed(2))
     });
   }
-  
-  return history;
-}
+});
 
 // ======================
 // GEMINI AI INSIGHTS

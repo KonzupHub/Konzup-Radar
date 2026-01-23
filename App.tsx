@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Shield, Radar, Clock, RefreshCw, ChevronDown, ArrowLeft, Scale, Lock, TrendingUp, BarChart3 } from 'lucide-react';
+import { Shield, Radar, Clock, RefreshCw, ChevronDown, ArrowLeft, Scale, Lock, TrendingUp, BarChart3, Globe } from 'lucide-react';
 import { RiskMetric, PredictionData } from './types';
 import { fetchRiskMetrics } from './services/dataService';
 import { getKonzupVerdict } from './services/geminiService';
@@ -90,6 +90,19 @@ const App: React.FC = () => {
     const avgVolatility = volatilityScore / data.metrics.length;
     const confidence = 100 - (avgVolatility * 20); // Higher volatility = lower confidence
     return Math.max(0, Math.min(100, confidence)).toFixed(1);
+  };
+
+  // Dynamic market summary based on confidence
+  const getMarketSummary = (): string => {
+    const confidence = parseFloat(calculateConfidenceIndex());
+    const labels = {
+      pt: { stable: 'Mercado de Turismo 2026: Cenário Estável', moderate: 'Mercado de Turismo 2026: Atenção Moderada', volatile: 'Mercado de Turismo 2026: Alerta Volátil' },
+      en: { stable: '2026 Tourism Market: Stable Scenario', moderate: '2026 Tourism Market: Moderate Alert', volatile: '2026 Tourism Market: Volatile Alert' },
+      es: { stable: 'Mercado Turístico 2026: Escenario Estable', moderate: 'Mercado Turístico 2026: Alerta Moderada', volatile: 'Mercado Turístico 2026: Alerta Volátil' }
+    };
+    if (confidence > 60) return labels[lang].stable;
+    if (confidence > 40) return labels[lang].moderate;
+    return labels[lang].volatile;
   };
 
   if (loading) {
@@ -190,7 +203,7 @@ const App: React.FC = () => {
                         <Shield className="w-5 h-5 text-cyan-400" />
                         <span className="text-sm font-bold uppercase text-cyan-400 tracking-widest">{t.sentimentScore}</span>
                       </div>
-                      <h3 className="text-2xl font-bold text-white">{t.marketSummary}</h3>
+                      <h3 className="text-2xl font-bold text-white">{getMarketSummary()}</h3>
                       <p className="text-slate-400 mt-1">{t.marketSummarySub}</p>
                     </div>
                     <div className="flex gap-4">
@@ -312,6 +325,48 @@ const App: React.FC = () => {
                     <h3 className="text-2xl font-bold text-white">{t.indicesTitle}</h3>
                   </div>
                   <p className="text-slate-300 leading-relaxed">{t.indicesDesc}</p>
+                </section>
+
+                {/* Dynamic Market Summary Section */}
+                <section className="glass p-8 rounded-2xl border-white/10">
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="p-3 bg-cyan-500/20 rounded-xl">
+                      <Shield className="w-6 h-6 text-cyan-400" />
+                    </div>
+                    <h3 className="text-2xl font-bold text-white">{t.confidenceExplainTitle}</h3>
+                  </div>
+                  <p className="text-slate-300 leading-relaxed mb-4">{t.confidenceExplainDesc}</p>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="bg-emerald-500/10 p-4 rounded-xl border border-emerald-500/20">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="w-3 h-3 rounded-full bg-emerald-400"></div>
+                        <span className="font-bold text-emerald-400">{t.confidenceStable}</span>
+                      </div>
+                    </div>
+                    <div className="bg-amber-500/10 p-4 rounded-xl border border-amber-500/20">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="w-3 h-3 rounded-full bg-amber-400"></div>
+                        <span className="font-bold text-amber-400">{t.confidenceModerate}</span>
+                      </div>
+                    </div>
+                    <div className="bg-red-500/10 p-4 rounded-xl border border-red-500/20">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="w-3 h-3 rounded-full bg-red-400"></div>
+                        <span className="font-bold text-red-400">{t.confidenceVolatile}</span>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                {/* Brazil/LATAM Indicators Section */}
+                <section className="glass p-8 rounded-2xl border-white/10">
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="p-3 bg-green-500/20 rounded-xl">
+                      <Globe className="w-6 h-6 text-green-400" />
+                    </div>
+                    <h3 className="text-2xl font-bold text-white">{t.brasilLatamTitle}</h3>
+                  </div>
+                  <p className="text-slate-300 leading-relaxed">{t.brasilLatamDesc}</p>
                 </section>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">

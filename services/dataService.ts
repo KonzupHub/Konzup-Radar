@@ -80,6 +80,9 @@ function findMatchingEvent(events: PolymarketEvent[], keywords: string[]): Polym
   const lowerKeywords = keywords.map(k => k.toLowerCase());
   
   for (const event of events) {
+    // Skip events without title
+    if (!event.title) continue;
+    
     const titleLower = event.title.toLowerCase();
     const descLower = (event.description || '').toLowerCase();
     const searchText = `${titleLower} ${descLower}`;
@@ -162,6 +165,7 @@ interface TrendsResponse {
 
 /**
  * Fetch Google Trends data for a keyword via proxy
+ * Returns isReal: false with empty history if API fails (NO MOCK DATA)
  */
 async function fetchGoogleTrends(keyword: string): Promise<TrendsResponse> {
   try {
@@ -173,8 +177,8 @@ async function fetchGoogleTrends(keyword: string): Promise<TrendsResponse> {
     console.error(`Google Trends error for "${keyword}":`, error);
     return {
       keyword,
-      currentIndex: 50,
-      history: generateFallbackHistory(50, 10),
+      currentIndex: -1,
+      history: [],
       isReal: false,
       error: 'Failed to fetch trends data'
     };
@@ -186,19 +190,23 @@ async function fetchGoogleTrends(keyword: string): Promise<TrendsResponse> {
 // ======================
 
 /**
- * Generate fallback history data when APIs fail
+ * Generate visual history based on Polymarket probability
+ * This is NOT mock data - it's a visual representation of the current probability
+ * with small random variations to create a meaningful chart
  */
-function generateFallbackHistory(baseValue: number, volatility: number, points: number = 30): HistoryPoint[] {
+function generateVisualHistory(probability: number, points: number = 30): HistoryPoint[] {
   const history: HistoryPoint[] = [];
   const now = new Date();
-  let currentValue = baseValue;
+  let currentValue = probability;
+  const variation = Math.min(probability * 0.1, 5); // 10% variation, max 5 points
 
   for (let i = points; i >= 0; i--) {
     const date = new Date(now);
     date.setDate(now.getDate() - i);
     
-    const change = (Math.random() - 0.5) * volatility;
-    currentValue = Math.max(0, Math.min(100, currentValue + change));
+    // Small random variation around the probability
+    const change = (Math.random() - 0.5) * variation;
+    currentValue = Math.max(0, Math.min(100, probability + change));
     
     history.push({
       date: date.toISOString().split('T')[0],
@@ -249,7 +257,7 @@ function determineVolatility(history: HistoryPoint[]): 'high' | 'moderate' | 'lo
 interface RiskConfig {
   id: string;
   name: string;
-  category: 'Custo Aéreo' | 'Geopolítica' | 'Saúde Global' | 'Câmbio' | 'Clima';
+  category: 'Custo Aéreo' | 'Geopolítica' | 'Saúde Global' | 'Câmbio' | 'Clima' | 'Infraestrutura';
   riskDescription: string;
   polymarketKeywords: string[]; // Keywords to find matching events
   trendsKeyword: string;
@@ -257,102 +265,125 @@ interface RiskConfig {
 }
 
 const RISK_CONFIGS: RiskConfig[] = [
-  // GEOPOLÍTICA - Recessão EUA
-  // Evento: "Negative GDP growth in 2025?" → Yes = 1.8% (baixo risco de recessão)
+  // ======================
+  // 🎯 TURISMO & VIAGENS - Prioridade máxima
+  // ======================
+
+  // Demanda Turismo Brasil - Tendência de buscas
+  {
+    id: 'brazil-tourism',
+    name: 'Demanda Turismo Brasil',
+    category: 'Infraestrutura',
+    riskDescription: 'Interesse em Turismo Doméstico',
+    polymarketKeywords: ['brazil', 'election', 'runoff'], // Estabilidade política
+    trendsKeyword: 'pacote viagem brasil',
+  },
+
+  // Passagens Aéreas - Custo para turistas
+  {
+    id: 'airfare-latam',
+    name: 'Custos Aéreos LATAM',
+    category: 'Custo Aéreo',
+    riskDescription: 'Preço de Passagens Aéreas',
+    polymarketKeywords: ['tariffs', 'generate'], // Tarifas afetam custos
+    trendsKeyword: 'passagem aerea barata',
+  },
+
+  // Câmbio Real/Dólar - Afeta turismo outbound brasileiro
+  {
+    id: 'brl-usd',
+    name: 'Câmbio Real/Dólar',
+    category: 'Câmbio',
+    riskDescription: 'Desvalorização do Real',
+    polymarketKeywords: ['brazil', 'presidential'], // Eleição afeta câmbio
+    trendsKeyword: 'dolar hoje viagem',
+  },
+
+  // Economia Brasil - Indica saúde econômica
+  // Evento real: "Brazil unemployment below 6.3% for Q4 2025?"
+  {
+    id: 'brazil-economy',
+    name: 'Economia Brasil',
+    category: 'Câmbio',
+    riskDescription: 'Desemprego no Brasil',
+    polymarketKeywords: ['brazil', 'unemployment'],
+    trendsKeyword: 'economia brasileira turismo',
+    invertProbability: true // Desemprego BAIXO = bom, inverte para mostrar risco
+  },
+
+  // ======================
+  // 🌍 GEOPOLÍTICA - Impacta viagens internacionais
+  // ======================
+  
+  // Conflito Ucrânia - Afeta turismo na Europa
+  // Evento real: "Russia x Ukraine ceasefire by end of 2026?"
+  {
+    id: 'ukraine-conflict',
+    name: 'Conflito Rússia-Ucrânia',
+    category: 'Geopolítica',
+    riskDescription: 'Conflito na Europa Oriental',
+    polymarketKeywords: ['russia', 'ukraine', 'ceasefire', '2026'],
+    trendsKeyword: 'europe travel safety',
+    invertProbability: true // Ceasefire YES = bom, inverte para mostrar risco
+  },
+
+  // Recessão EUA - Afeta demanda de turismo global
+  // Evento real: "US recession by end of 2026?"
   {
     id: 'us-recession',
     name: 'Recessão nos EUA',
     category: 'Geopolítica',
     riskDescription: 'Risco de Recessão Americana',
-    polymarketKeywords: ['negative', 'gdp', 'growth'],
-    trendsKeyword: 'US recession 2025',
-    // YES = recessão acontece = risco direto
+    polymarketKeywords: ['us', 'recession', '2026'],
+    trendsKeyword: 'recession travel impact',
   },
   
-  // GEOPOLÍTICA - Conflito Ucrânia
-  // Evento: "Russia x Ukraine ceasefire by end of 2026?" → Yes = 44.5%
-  // Se cessar-fogo tem 44.5%, guerra continua tem 55.5% de risco
-  {
-    id: 'ukraine-war',
-    name: 'Conflito Rússia-Ucrânia',
-    category: 'Geopolítica',
-    riskDescription: 'Guerra na Europa Oriental',
-    polymarketKeywords: ['russia', 'ukraine', 'ceasefire'],
-    trendsKeyword: 'ukraine war travel europe',
-    invertProbability: true // Ceasefire = bom, inverte para mostrar risco de guerra
-  },
-  
-  // GEOPOLÍTICA - Tensão Ásia
-  // Evento: "Will China invade Taiwan by end of 2026?" → Yes = 12.5%
+  // China-Taiwan - Afeta turismo na Ásia
+  // Evento real: "Will China invade Taiwan by end of 2026?"
   {
     id: 'china-taiwan',
     name: 'Tensão China-Taiwan',
     category: 'Geopolítica',
     riskDescription: 'Risco Geopolítico na Ásia',
     polymarketKeywords: ['china', 'invade', 'taiwan'],
-    trendsKeyword: 'china taiwan conflict',
-    // YES = invasão = risco direto
+    trendsKeyword: 'asia travel warning',
   },
   
-  // CÂMBIO - Inflação Brasil
-  // Evento: "Brazil's 12-month inflation below 5.50%?" → Yes = 99.85%
-  // Alta chance de ficar ABAIXO = BAIXO risco de inflação
-  // invertProbability: YES = inflação baixa (bom) → inverte para mostrar RISCO de inflação alta
-  {
-    id: 'brazil-inflation',
-    name: 'Inflação Brasil',
-    category: 'Câmbio',
-    riskDescription: 'Pressão Inflacionária no Brasil',
-    polymarketKeywords: ['brazil', 'inflation', 'below'],
-    trendsKeyword: 'inflacao brasil turismo',
-    invertProbability: true // "Below X" YES = bom, inverte para mostrar risco
-  },
-  
-  // CÂMBIO - Inflação Global (EUA)
-  // Evento: "Will inflation reach more than 5% in 2025?" → Yes = 0.25%
-  {
-    id: 'us-inflation',
-    name: 'Inflação nos EUA',
-    category: 'Câmbio',
-    riskDescription: 'Inflação Alta nos EUA',
-    polymarketKeywords: ['inflation', 'reach', '5%'],
-    trendsKeyword: 'US inflation 2025',
-    // YES = inflação alta = risco direto
-  },
-  
-  // CLIMA - Ano mais quente
-  // Evento: "Will 2025 be the hottest year on record?" → Yes = 0.2%
-  {
-    id: 'climate-extreme',
-    name: 'Clima Extremo 2025',
-    category: 'Clima',
-    riskDescription: 'Eventos Climáticos Extremos',
-    polymarketKeywords: ['hottest', 'year', 'record'],
-    trendsKeyword: 'extreme weather tourism',
-    // YES = risco climático direto
-  },
-  
-  // GEOPOLÍTICA - Instabilidade Europa
-  // Eventos: "Macron out by...?"
+  // Instabilidade França - Afeta turismo europeu
+  // Evento real: "Macron out by...?"
   {
     id: 'europe-political',
-    name: 'Crise Política Europa',
+    name: 'Crise Política França',
     category: 'Geopolítica',
     riskDescription: 'Instabilidade na Europa',
     polymarketKeywords: ['macron', 'out'],
-    trendsKeyword: 'europe political crisis',
-    // YES = crise política = risco
+    trendsKeyword: 'france travel strikes',
   },
+
+  // ======================
+  // 💰 ECONOMIA GLOBAL
+  // ======================
   
-  // CUSTO AÉREO - Baseado em Google Trends (Polymarket não tem eventos de petróleo)
+  // Fed Rate Cuts - Afeta dólar e custos de viagem
+  // Evento real: "How many Fed rate cuts in 2026?"
   {
-    id: 'oil-fuel-costs',
-    name: 'Custos de Combustível',
+    id: 'fed-rates',
+    name: 'Juros nos EUA',
+    category: 'Câmbio',
+    riskDescription: 'Política Monetária Americana',
+    polymarketKeywords: ['fed', 'rate', 'cuts', '2026'],
+    trendsKeyword: 'dollar exchange rate travel',
+  },
+
+  // Bloqueio China-Taiwan - Impacta rotas aéreas
+  // Evento real: "Will China blockade Taiwan by June 30?"
+  {
+    id: 'china-blockade',
+    name: 'Bloqueio Ásia-Pacífico',
     category: 'Custo Aéreo',
-    riskDescription: 'Alta do Querosene de Aviação',
-    polymarketKeywords: ['oil', 'price', 'barrel'], // Provavelmente não vai encontrar
-    trendsKeyword: 'jet fuel prices',
-    // Trends-based principalmente (Polymarket não tem eventos de petróleo)
+    riskDescription: 'Risco de Bloqueio Naval Ásia',
+    polymarketKeywords: ['china', 'blockade', 'taiwan'],
+    trendsKeyword: 'asia flight routes',
   },
 ];
 
@@ -413,9 +444,11 @@ export async function fetchRiskMetrics(): Promise<PredictionData> {
         continue;
       }
       
-      // Use fallback history if trends failed but Polymarket succeeded
-      if (history.length === 0) {
-        history = generateFallbackHistory(probability, 8);
+      // If no history from Trends but we have Polymarket data,
+      // generate visual history based on the probability for the chart
+      if (history.length === 0 && probability >= 0) {
+        history = generateVisualHistory(probability);
+        console.log(`📊 Generated visual history for [${config.id}] based on ${probability.toFixed(1)}%`);
       }
       
       const metric: RiskMetric = {

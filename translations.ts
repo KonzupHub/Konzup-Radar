@@ -8,21 +8,24 @@ export const categoryTranslations = {
     'Câmbio': 'Câmbio',
     'Clima': 'Clima',
     'Custo Aéreo': 'Custo Aéreo',
-    'Saúde Global': 'Saúde Global'
+    'Saúde Global': 'Saúde Global',
+    'Infraestrutura': 'Infraestrutura'
   },
   en: {
     'Geopolítica': 'Geopolitics',
     'Câmbio': 'Currency',
     'Clima': 'Climate',
     'Custo Aéreo': 'Air Costs',
-    'Saúde Global': 'Global Health'
+    'Saúde Global': 'Global Health',
+    'Infraestrutura': 'Infrastructure'
   },
   es: {
     'Geopolítica': 'Geopolítica',
     'Câmbio': 'Cambio',
     'Clima': 'Clima',
     'Custo Aéreo': 'Costo Aéreo',
-    'Saúde Global': 'Salud Global'
+    'Saúde Global': 'Salud Global',
+    'Infraestrutura': 'Infraestructura'
   }
 };
 
@@ -30,33 +33,42 @@ export const categoryTranslations = {
 export const riskDescTranslations = {
   pt: {
     'Risco de Recessão Americana': 'Risco de Recessão Americana',
-    'Guerra na Europa Oriental': 'Guerra na Europa Oriental',
+    'Conflito na Europa Oriental': 'Conflito na Europa Oriental',
     'Risco Geopolítico na Ásia': 'Risco Geopolítico na Ásia',
-    'Pressão Inflacionária no Brasil': 'Pressão Inflacionária no Brasil',
-    'Inflação Alta nos EUA': 'Inflação Alta nos EUA',
-    'Eventos Climáticos Extremos': 'Eventos Climáticos Extremos',
     'Instabilidade na Europa': 'Instabilidade na Europa',
-    'Alta do Querosene de Aviação': 'Alta do Querosene de Aviação'
+    'Crise Política na Alemanha': 'Crise Política na Alemanha',
+    'Política Monetária Americana': 'Política Monetária Americana',
+    'Desemprego no Brasil': 'Desemprego no Brasil',
+    'Desvalorização do Real': 'Desvalorização do Real',
+    'Interesse em Turismo Doméstico': 'Interesse em Turismo Doméstico',
+    'Preço de Passagens Aéreas': 'Preço de Passagens Aéreas',
+    'Risco de Bloqueio Naval Ásia': 'Risco de Bloqueio Naval Ásia'
   },
   en: {
     'Risco de Recessão Americana': 'US Recession Risk',
-    'Guerra na Europa Oriental': 'War in Eastern Europe',
+    'Conflito na Europa Oriental': 'Conflict in Eastern Europe',
     'Risco Geopolítico na Ásia': 'Geopolitical Risk in Asia',
-    'Pressão Inflacionária no Brasil': 'Brazil Inflation Pressure',
-    'Inflação Alta nos EUA': 'High US Inflation',
-    'Eventos Climáticos Extremos': 'Extreme Weather Events',
     'Instabilidade na Europa': 'Europe Instability',
-    'Alta do Querosene de Aviação': 'Jet Fuel Price Rise'
+    'Crise Política na Alemanha': 'Germany Political Crisis',
+    'Política Monetária Americana': 'US Monetary Policy',
+    'Desemprego no Brasil': 'Brazil Unemployment',
+    'Desvalorização do Real': 'Brazilian Real Devaluation',
+    'Interesse em Turismo Doméstico': 'Domestic Tourism Interest',
+    'Preço de Passagens Aéreas': 'Airfare Prices',
+    'Risco de Bloqueio Naval Ásia': 'Asia Naval Blockade Risk'
   },
   es: {
     'Risco de Recessão Americana': 'Riesgo de Recesión en EE.UU.',
-    'Guerra na Europa Oriental': 'Guerra en Europa Oriental',
+    'Conflito na Europa Oriental': 'Conflicto en Europa Oriental',
     'Risco Geopolítico na Ásia': 'Riesgo Geopolítico en Asia',
-    'Pressão Inflacionária no Brasil': 'Presión Inflacionaria en Brasil',
-    'Inflação Alta nos EUA': 'Alta Inflación en EE.UU.',
-    'Eventos Climáticos Extremos': 'Eventos Climáticos Extremos',
     'Instabilidade na Europa': 'Inestabilidad en Europa',
-    'Alta do Querosene de Aviação': 'Alza del Combustible Aéreo'
+    'Crise Política na Alemanha': 'Crisis Política en Alemania',
+    'Política Monetária Americana': 'Política Monetaria de EE.UU.',
+    'Desemprego no Brasil': 'Desempleo en Brasil',
+    'Desvalorização do Real': 'Devaluación del Real Brasileño',
+    'Interesse em Turismo Doméstico': 'Interés en Turismo Doméstico',
+    'Preço de Passagens Aéreas': 'Precio de Pasajes Aéreos',
+    'Risco de Bloqueio Naval Ásia': 'Riesgo de Bloqueo Naval Asia'
   }
 };
 
@@ -108,7 +120,14 @@ export const translations = {
     exampleTrends: "Google Trends mostra: +20% de buscas por \"passagem aérea cara\"",
     exampleResult: "Resultado: Sinal vermelho para custos aéreos no turismo",
     importantNote: "Importante:",
-    importantNoteDesc: "Estes são indicadores de probabilidade, não fatos. O mercado pode errar. Use como uma ferramenta de apoio à decisão, nunca como certeza absoluta."
+    importantNoteDesc: "Estes são indicadores de probabilidade, não fatos. O mercado pode errar. Use como uma ferramenta de apoio à decisão, nunca como certeza absoluta.",
+    confidenceExplainTitle: "Resumo Dinâmico do Mercado",
+    confidenceExplainDesc: "O título do cenário de mercado muda automaticamente baseado no Índex Confiança calculado em tempo real:",
+    confidenceStable: "Confiança > 60: Cenário Estável",
+    confidenceModerate: "Confiança 40-60: Atenção Moderada",
+    confidenceVolatile: "Confiança < 40: Alerta Volátil",
+    brasilLatamTitle: "Indicadores Brasil e América Latina",
+    brasilLatamDesc: "Acompanhamos indicadores específicos para o mercado brasileiro e latino-americano: cotação do dólar, demanda de turismo doméstico e conectividade aérea regional. Dados atualizados em tempo real via Google Trends."
   },
   en: {
     radar: "RADAR",
@@ -157,7 +176,14 @@ export const translations = {
     exampleTrends: "Google Trends shows: +20% searches for \"expensive flights\"",
     exampleResult: "Result: Red signal for air costs in tourism",
     importantNote: "Important:",
-    importantNoteDesc: "These are probability indicators, not facts. The market can be wrong. Use as a decision support tool, never as absolute certainty."
+    importantNoteDesc: "These are probability indicators, not facts. The market can be wrong. Use as a decision support tool, never as absolute certainty.",
+    confidenceExplainTitle: "Dynamic Market Summary",
+    confidenceExplainDesc: "The market scenario title changes automatically based on the real-time Confidence Index:",
+    confidenceStable: "Confidence > 60: Stable Scenario",
+    confidenceModerate: "Confidence 40-60: Moderate Alert",
+    confidenceVolatile: "Confidence < 40: Volatile Alert",
+    brasilLatamTitle: "Brazil and Latin America Indicators",
+    brasilLatamDesc: "We track specific indicators for the Brazilian and Latin American market: dollar exchange rate, domestic tourism demand, and regional air connectivity. Real-time data via Google Trends."
   },
   es: {
     radar: "RADAR",
@@ -206,6 +232,13 @@ export const translations = {
     exampleTrends: "Google Trends muestra: +20% de búsquedas por \"pasaje caro\"",
     exampleResult: "Resultado: Señal roja para costos aéreos en turismo",
     importantNote: "Importante:",
-    importantNoteDesc: "Estos son indicadores de probabilidad, no hechos. El mercado puede equivocarse. Use como herramienta de apoyo a la decisión, nunca como certeza absoluta."
+    importantNoteDesc: "Estos son indicadores de probabilidad, no hechos. El mercado puede equivocarse. Use como herramienta de apoyo a la decisión, nunca como certeza absoluta.",
+    confidenceExplainTitle: "Resumen Dinámico del Mercado",
+    confidenceExplainDesc: "El título del escenario de mercado cambia automáticamente según el Índice de Confianza calculado en tiempo real:",
+    confidenceStable: "Confianza > 60: Escenario Estable",
+    confidenceModerate: "Confianza 40-60: Alerta Moderada",
+    confidenceVolatile: "Confianza < 40: Alerta Volátil",
+    brasilLatamTitle: "Indicadores Brasil y América Latina",
+    brasilLatamDesc: "Monitoreamos indicadores específicos para el mercado brasileño y latinoamericano: cotización del dólar, demanda de turismo doméstico y conectividad aérea regional. Datos en tiempo real vía Google Trends."
   }
 };
