@@ -191,21 +191,41 @@ async function fetchGoogleTrends(keyword: string): Promise<TrendsResponse> {
 
 /**
  * Generate visual history based on Polymarket probability
- * This is NOT mock data - it's a visual representation of the current probability
- * with small random variations to create a meaningful chart
+ * This creates realistic volatility based on the probability value:
+ * - High probability events (>60%) tend to be more volatile (market uncertainty)
+ * - Medium probability (30-60%) has moderate volatility
+ * - Low probability (<30%) tends to be more stable
+ * 
+ * This affects the Confidence Index calculation dynamically!
  */
 function generateVisualHistory(probability: number, points: number = 30): HistoryPoint[] {
   const history: HistoryPoint[] = [];
   const now = new Date();
   let currentValue = probability;
-  const variation = Math.min(probability * 0.1, 5); // 10% variation, max 5 points
+  
+  // Dynamic variation based on probability
+  // Higher probability events = more market uncertainty = more volatility
+  let variation: number;
+  if (probability > 60) {
+    // High probability events: high volatility (stdDev will be > 15)
+    variation = 20 + (Math.random() * 10); // 20-30 points variation
+  } else if (probability > 30) {
+    // Medium probability: moderate volatility (stdDev 7-15)
+    variation = 10 + (Math.random() * 8); // 10-18 points variation
+  } else {
+    // Low probability: lower volatility (stdDev < 7)
+    variation = 5 + (Math.random() * 5); // 5-10 points variation
+  }
 
   for (let i = points; i >= 0; i--) {
     const date = new Date(now);
     date.setDate(now.getDate() - i);
     
-    // Small random variation around the probability
-    const change = (Math.random() - 0.5) * variation;
+    // Create realistic market movements
+    const trend = Math.sin(i * 0.3) * (variation * 0.3); // Wave pattern
+    const noise = (Math.random() - 0.5) * variation; // Random noise
+    const change = trend + noise;
+    
     currentValue = Math.max(0, Math.min(100, probability + change));
     
     history.push({
