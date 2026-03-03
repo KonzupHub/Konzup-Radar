@@ -530,6 +530,7 @@ const RISK_CONFIGS: RiskConfig[] = [
     riskDescription: 'Fechamento do Estreito de Ormuz pelo Irã',
     polymarketKeywords: ['iran', 'close', 'strait', 'hormuz'],
     trendsKeyword: 'strait of hormuz oil price',
+    overrideProbability: 95, // Evento confirmado em 28/02/2026
   },
   {
     id: 'suez-canal',
@@ -549,7 +550,21 @@ const RISK_CONFIGS: RiskConfig[] = [
 1. Adicione a configuração em `RISK_CONFIGS` (`services/dataService.ts`)
 2. Defina `polymarketKeywords` e `trendsKeyword` relevantes
 3. Use `invertProbability: true` se a probabilidade alta significa risco baixo
-4. Faça deploy: `gcloud run deploy konzup-radar --source . --project=gen-lang-client-0598434360 --region us-central1 --allow-unauthenticated`
+4. Use `overrideProbability: N` para forçar probabilidade em eventos confirmados no mundo real
+5. Faça deploy: `gcloud run deploy konzup-radar --source . --project=gen-lang-client-0598434360 --region us-central1 --allow-unauthenticated`
+
+### Override Manual (Crises Confirmadas)
+
+Quando um evento é confirmado no mundo real mas o Polymarket ainda não reflete a realidade (ex: Estreito de Ormuz fechado pelo Irã em fev/2026), use `overrideProbability` para forçar a probabilidade correta:
+
+```typescript
+{
+  id: 'iran-hormuz',
+  overrideProbability: 95, // Evento confirmado, ignora Polymarket
+}
+```
+
+Para remover o override, basta apagar a linha `overrideProbability` e fazer redeploy.
 
 ---
 

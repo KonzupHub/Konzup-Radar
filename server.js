@@ -11,6 +11,7 @@ import express from 'express';
 import cors from 'cors';
 import axios from 'axios';
 import { spawn } from 'child_process';
+import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
@@ -160,7 +161,7 @@ function runPythonScript(scriptPath, args, timeout = 30000) {
   return new Promise((resolve, reject) => {
     // Try venv Python first, fallback to system python3
     const venvPython = path.join(__dirname, 'venv', 'bin', 'python');
-    const pythonCmd = require('fs').existsSync(venvPython) ? venvPython : 'python3';
+    const pythonCmd = fs.existsSync(venvPython) ? venvPython : 'python3';
     
     const process = spawn(pythonCmd, [scriptPath, ...args], {
       timeout,

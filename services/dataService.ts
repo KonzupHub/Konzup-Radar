@@ -290,9 +290,10 @@ interface RiskConfig {
   name: string;
   category: 'Custo Aéreo' | 'Geopolítica' | 'Saúde Global' | 'Câmbio' | 'Clima' | 'Infraestrutura';
   riskDescription: string;
-  polymarketKeywords: string[]; // Keywords to find matching events
+  polymarketKeywords: string[];
   trendsKeyword: string;
-  invertProbability?: boolean; // Some events have inverted logic (e.g., "inflation below X" = good)
+  invertProbability?: boolean;
+  overrideProbability?: number; // Force a specific probability (0-100) for confirmed real-world events
 }
 
 const RISK_CONFIGS: RiskConfig[] = [
@@ -416,7 +417,9 @@ const RISK_CONFIGS: RiskConfig[] = [
     trendsKeyword: 'asia flight routes',
   },
 
-  // Evento real: "Will Iran close the Strait of Hormuz by...?" (69.2%)
+  // Evento real: "Will Iran close the Strait of Hormuz by...?"
+  // Override: Irã declarou fechamento em 28/02/2026 após ataques EUA/Israel (Operação Epic Fury)
+  // Tráfego caiu 70%+, Maersk/Hapag-Lloyd suspenderam trânsitos, petróleo subiu 13%
   {
     id: 'iran-hormuz',
     name: 'Estreito de Ormuz',
@@ -424,6 +427,7 @@ const RISK_CONFIGS: RiskConfig[] = [
     riskDescription: 'Fechamento do Estreito de Ormuz pelo Irã',
     polymarketKeywords: ['iran', 'close', 'strait', 'hormuz'],
     trendsKeyword: 'strait of hormuz oil price',
+    overrideProbability: 95,
   },
 
   // Evento real: "1k+ container ship transits of Suez Canal in Q1 2026?" (4.4%)
@@ -473,16 +477,24 @@ export async function fetchRiskMetrics(): Promise<PredictionData> {
     let polymarketEvent: string | null = null;
     
     try {
+      // 0. Check for manual override (confirmed real-world events)
+      if (config.overrideProbability !== undefined) {
+        probability = config.overrideProbability;
+        hasRealData = true;
+        console.log(`🔴 Override [${config.id}]: Forced to ${probability}% (confirmed event)`);
+      }
+
       // 1. Find matching Polymarket event
       const event = findMatchingEvent(allEvents, config.polymarketKeywords);
       if (event) {
         const rawProb = extractProbability(event);
         if (rawProb >= 0) {
-          // Apply inversion if needed (e.g., "inflation below X" means low risk)
-          probability = config.invertProbability ? (100 - rawProb) : rawProb;
+          if (config.overrideProbability === undefined) {
+            probability = config.invertProbability ? (100 - rawProb) : rawProb;
+          }
           hasRealData = true;
           polymarketEvent = event.title;
-          console.log(`✅ Polymarket [${config.id}]: "${event.title}" → ${probability.toFixed(1)}%`);
+          console.log(`✅ Polymarket [${config.id}]: "${event.title}" → ${rawProb.toFixed(1)}%${config.overrideProbability !== undefined ? ' (overridden)' : ''}`);
         }
       }
       

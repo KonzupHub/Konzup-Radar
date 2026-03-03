@@ -143,7 +143,7 @@ const App: React.FC = () => {
           </div>
           <div className="hidden md:flex items-center gap-2 ml-6">
             <Clock className="w-4 h-4 text-cyan-400" />
-            <span className="text-sm font-mono text-slate-400 uppercase tracking-tighter">Janeiro 2026 | {new Date().toLocaleTimeString('pt-BR')}</span>
+            <span className="text-sm font-mono text-slate-400 uppercase tracking-tighter">{new Date().toLocaleTimeString('pt-BR')}</span>
           </div>
         </div>
         
@@ -409,7 +409,7 @@ const App: React.FC = () => {
               </h2>
               <div className="prose prose-invert max-w-none">
                 <div className="glass p-8 rounded-2xl border-white/10 space-y-6 text-slate-300">
-                  <p><strong>Última atualização:</strong> Janeiro de 2026</p>
+                  <p><strong>Última atualização:</strong> Março de 2026</p>
                   
                   <h3 className="text-xl font-bold text-white">1. Coleta de Dados</h3>
                   <p>O Konzup Radar <strong>não coleta dados pessoais</strong> dos usuários. Não solicitamos nome, e-mail, CPF ou qualquer informação identificável. Utilizamos apenas cookies técnicos essenciais para o funcionamento do site.</p>
@@ -445,7 +445,7 @@ const App: React.FC = () => {
               </h2>
               <div className="prose prose-invert max-w-none">
                 <div className="glass p-8 rounded-2xl border-white/10 space-y-6 text-slate-300">
-                  <p><strong>Última atualização:</strong> Janeiro de 2026</p>
+                  <p><strong>Última atualização:</strong> Março de 2026</p>
                   
                   <h3 className="text-xl font-bold text-white">1. Aceitação dos Termos</h3>
                   <p>Ao acessar o Konzup Radar, você concorda com estes termos de uso. Se não concordar, não utilize o serviço.</p>
@@ -488,7 +488,7 @@ const App: React.FC = () => {
               <button onClick={() => setCurrentView('terms')} className="hover:text-cyan-400 transition-colors">
                 Termos de Uso
               </button>
-              <span className="hidden md:inline">Janeiro 2026</span>
+              <span className="hidden md:inline">2026</span>
             </div>
           </div>
         </footer>
