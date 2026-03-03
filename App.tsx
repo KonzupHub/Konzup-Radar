@@ -264,6 +264,7 @@ const App: React.FC = () => {
                     <div className="bg-gradient-to-r from-purple-500/10 to-cyan-500/10 p-6 rounded-xl border border-purple-500/20">
                       <p className="text-lg font-bold text-white mb-4">{t.crossingFormula}</p>
                       <p className="text-2xl font-mono font-bold text-cyan-400">Risk = (Polymarket × 70%) + (Trends × 30%)</p>
+                      <p className="text-sm text-slate-400 mt-3">{t.overrideNote}</p>
                     </div>
 
                     {/* Two columns explanation */}
