@@ -33,13 +33,17 @@ function generateInfoContent(metric: RiskMetric, lang: Language): string {
 📈 Tendência: ${trendText.pt[metric.trend]}
 🎯 Nível de risco: ${riskLevel}
 
+📐 FÓRMULA:
+Risk = (Polymarket × 70%) + (Google Trends × 30%)
+
 📡 FONTE DOS DADOS:
-• Polymarket: Mercado de previsões onde pessoas apostam dinheiro real em eventos futuros. A probabilidade reflete o consenso do mercado.
-• Google Trends: Volume de buscas relacionadas ao tema nos últimos 30 dias.
+• Polymarket (70%): Mercado de previsões com dinheiro real. Reflete o consenso do mercado.
+• Google Trends (30%): Volume de buscas nos últimos 30 dias. Reflete o "humor" do mercado.
+• Gemini AI: Gera o insight textual de cada card.
 
 💡 COMO INTERPRETAR:
-• Probabilidade ALTA (>70%): O mercado acredita que este evento tem alta chance de ocorrer.
-• Probabilidade BAIXA (<30%): O mercado considera improvável.
+• Probabilidade ALTA (>70%): Alta chance de ocorrer.
+• Probabilidade BAIXA (<30%): Mercado considera improvável.
 
 🔄 Dados atualizados em tempo real das APIs.`;
   } else if (lang === 'es') {
@@ -49,9 +53,13 @@ function generateInfoContent(metric: RiskMetric, lang: Language): string {
 📈 Tendencia: ${trendText.es[metric.trend]}
 🎯 Nivel de riesgo: ${riskLevel}
 
+📐 FÓRMULA:
+Risk = (Polymarket × 70%) + (Google Trends × 30%)
+
 📡 FUENTE DE DATOS:
-• Polymarket: Mercado de predicciones donde personas apuestan dinero real.
-• Google Trends: Volumen de búsquedas en los últimos 30 días.
+• Polymarket (70%): Mercado de predicciones con dinero real.
+• Google Trends (30%): Volumen de búsquedas en los últimos 30 días.
+• Gemini AI: Genera el insight textual de cada card.
 
 🔄 Datos actualizados en tiempo real.`;
   } else {
@@ -61,9 +69,13 @@ function generateInfoContent(metric: RiskMetric, lang: Language): string {
 📈 Trend: ${trendText.en[metric.trend]}
 🎯 Risk level: ${riskLevel}
 
+📐 FORMULA:
+Risk = (Polymarket × 70%) + (Google Trends × 30%)
+
 📡 DATA SOURCES:
-• Polymarket: Prediction market where people bet real money on future events.
-• Google Trends: Search volume for related terms over the last 30 days.
+• Polymarket (70%): Prediction market with real money bets.
+• Google Trends (30%): Search volume over the last 30 days.
+• Gemini AI: Generates the text insight for each card.
 
 🔄 Data updated in real-time from APIs.`;
   }

@@ -261,10 +261,16 @@ const App: React.FC = () => {
                     <p>{t.algorithmDesc}</p>
                     
                     {/* Formula Box */}
-                    <div className="bg-gradient-to-r from-purple-500/10 to-cyan-500/10 p-6 rounded-xl border border-purple-500/20">
-                      <p className="text-lg font-bold text-white mb-4">{t.crossingFormula}</p>
-                      <p className="text-2xl font-mono font-bold text-cyan-400">Risk = (Polymarket × 70%) + (Trends × 30%)</p>
-                      <p className="text-sm text-slate-400 mt-3">{t.overrideNote}</p>
+                    <div className="bg-gradient-to-r from-purple-500/10 to-cyan-500/10 p-6 rounded-xl border border-purple-500/20 space-y-4">
+                      <div>
+                        <p className="text-sm font-bold text-slate-400 uppercase mb-2">{t.crossingFormula}</p>
+                        <p className="text-xl font-mono font-bold text-cyan-400">Risk = (Polymarket × 70%) + (Trends × 30%)</p>
+                      </div>
+                      <div className="border-t border-white/10 pt-4">
+                        <p className="text-sm font-bold text-red-400 uppercase mb-2">{t.overrideTitle}</p>
+                        <p className="text-xl font-mono font-bold text-red-400">Risk = override manual</p>
+                        <p className="text-sm text-slate-400 mt-2">{t.overrideNote}</p>
+                      </div>
                     </div>
 
                     {/* Four pillars explanation */}
@@ -442,11 +448,13 @@ const App: React.FC = () => {
                   <p>O Konzup Radar <strong>não coleta dados pessoais</strong> dos usuários. Não solicitamos nome, e-mail, CPF ou qualquer informação identificável. Utilizamos apenas cookies técnicos essenciais para o funcionamento do site.</p>
                   
                   <h3 className="text-xl font-bold text-white">2. Dados Utilizados</h3>
-                  <p>As informações exibidas no dashboard são obtidas exclusivamente de fontes públicas:</p>
+                  <p>As informações exibidas no dashboard são obtidas exclusivamente de fontes públicas e processadas por IA:</p>
                   <ul className="list-disc list-inside space-y-1">
                     <li>Polymarket (mercados de previsão públicos)</li>
                     <li>Google Trends (índices de busca agregados)</li>
+                    <li>Gemini AI (insights gerados por inteligência artificial do Google)</li>
                   </ul>
+                  <p className="mt-2">Em eventos confirmados no mundo real, o sistema aplica override manual de probabilidade para refletir a realidade antes dos mercados.</p>
                   
                   <h3 className="text-xl font-bold text-white">3. LGPD - Lei Geral de Proteção de Dados</h3>
                   <p>Em conformidade com a Lei nº 13.709/2018 (LGPD), informamos que este site opera sem tratamento de dados pessoais. Caso você tenha dúvidas sobre privacidade, entre em contato: <a href="mailto:privacidade@konzup.com" className="text-cyan-400 hover:underline">privacidade@konzup.com</a></p>

@@ -116,20 +116,25 @@ O sistema monitora **12 indicadores** organizados em categorias:
 └─────────────────┘
 ```
 
-### 2. Fórmula de Risco
+### 2. Fórmula de Risco (Cruzamento 70/30)
 
-O cruzamento de dados usa pesos diferenciados:
+O percentual de cada card é calculado pelo **cruzamento** das duas fontes numéricas:
 
 ```
 Risk = (Polymarket × 70%) + (Google Trends × 30%)
 ```
 
 - **Polymarket (70%)**: Probabilidade real de mercados preditivos com dinheiro real
-- **Google Trends (30%)**: Índice de interesse público (proxy de demanda/preocupação)
+- **Google Trends (30%)**: Índice de interesse de busca (0–100) como proxy de preocupação/ demanda
+
+O blend só é aplicado quando **ambas** as fontes retornam dados; caso contrário usa-se 100% da fonte disponível. O gráfico histórico de cada card vem do Google Trends; o insight textual vem do Gemini AI.
+
+**Override Manual (Crises Confirmadas):**
+Quando um evento é confirmado no mundo real mas o Polymarket ainda não reflete (ex: fechamento do Estreito de Ormuz), a probabilidade é substituída por um valor manual (`overrideProbability`) e o blend é ignorado.
 
 ### 3. Insights de IA (Gemini 2.0 Flash)
 
-Para cada indicador, o Gemini gera um insight executivo curto para CEOs de turismo, considerando a probabilidade, tendência e volatilidade do indicador. Os insights são cacheados por 12 horas.
+Para cada indicador, o Gemini gera um insight executivo curto para CEOs de turismo, considerando a probabilidade, tendência e volatilidade do indicador. Os insights são cacheados por 24 horas.
 
 ### 4. Índice de Confiança
 

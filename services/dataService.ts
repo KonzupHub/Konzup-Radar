@@ -472,6 +472,7 @@ export async function fetchRiskMetrics(): Promise<PredictionData> {
   // Process each risk configuration
   for (const config of RISK_CONFIGS) {
     let probability = -1;
+    let polymarketProb = -1;
     let history: HistoryPoint[] = [];
     let hasRealData = false;
     let polymarketEvent: string | null = null;
@@ -489,9 +490,7 @@ export async function fetchRiskMetrics(): Promise<PredictionData> {
       if (event) {
         const rawProb = extractProbability(event);
         if (rawProb >= 0) {
-          if (config.overrideProbability === undefined) {
-            probability = config.invertProbability ? (100 - rawProb) : rawProb;
-          }
+          polymarketProb = config.invertProbability ? (100 - rawProb) : rawProb;
           hasRealData = true;
           polymarketEvent = event.title;
           console.log(`✅ Polymarket [${config.id}]: "${event.title}" → ${rawProb.toFixed(1)}%${config.overrideProbability !== undefined ? ' (overridden)' : ''}`);
@@ -504,9 +503,16 @@ export async function fetchRiskMetrics(): Promise<PredictionData> {
         history = trends.history;
         hasRealData = true;
         console.log(`✅ Trends [${config.id}]: "${config.trendsKeyword}" → index ${trends.currentIndex}`);
-        
-        // If no Polymarket data, use Trends as probability indicator
-        if (probability < 0) {
+      }
+
+      // 3. Compute probability: override > blend (70/30) > single source
+      if (config.overrideProbability === undefined) {
+        if (polymarketProb >= 0 && trends.isReal && trends.currentIndex >= 0) {
+          probability = (polymarketProb * 0.7) + (trends.currentIndex * 0.3);
+          console.log(`📐 Blend [${config.id}]: (${polymarketProb.toFixed(1)}×70%) + (${trends.currentIndex}×30%) = ${probability.toFixed(1)}%`);
+        } else if (polymarketProb >= 0) {
+          probability = polymarketProb;
+        } else if (trends.isReal && trends.currentIndex >= 0) {
           probability = trends.currentIndex;
         }
       }
