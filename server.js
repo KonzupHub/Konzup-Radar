@@ -14,6 +14,7 @@ import { spawn } from 'child_process';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
+import rateLimit from 'express-rate-limit';
 
 dotenv.config();
 
@@ -23,13 +24,47 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+const ALLOWED_ORIGINS = [
+  'https://konzup-radar-2sxz6rs7ka-uc.a.run.app',
+  'https://konzup-radar-607124054196.us-central1.run.app',
+  'https://konzup-radar-885936675930.us-central1.run.app',
+  'https://radar.konzuphub.com',
+  'http://localhost:3000',
+  'http://localhost:5173',
+];
+
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || ALLOWED_ORIGINS.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(null, false);
+    }
+  }
+}));
 app.use(express.json());
 
-// Simple in-memory cache for Google Trends (avoid rate limiting)
+const geminiLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 15,
+  message: { error: 'Too many requests. Try again in 1 minute.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const trendsLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// In-memory caches with differentiated TTLs
 const trendsCache = new Map();
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+const TRENDS_CACHE_TTL = 6 * 60 * 60 * 1000; // 6 hours - Trends data updates weekly
+const geminiCache = new Map();
+const GEMINI_CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours - insights refresh once per day
 
 // ======================
 // POLYMARKET API PROXY
@@ -168,7 +203,7 @@ function runPythonScript(scriptPath, args, timeout = 30000) {
  * Execute Python script to fetch Google Trends data
  * Uses spawn with array arguments to prevent command injection
  */
-app.get('/api/trends/:keyword', async (req, res) => {
+app.get('/api/trends/:keyword', trendsLimiter, async (req, res) => {
   const { keyword } = req.params;
   
   // Sanitize keyword - allow only alphanumeric, spaces, and common punctuation
@@ -177,7 +212,7 @@ app.get('/api/trends/:keyword', async (req, res) => {
   
   // Check cache first
   const cached = trendsCache.get(cacheKey);
-  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+  if (cached && Date.now() - cached.timestamp < TRENDS_CACHE_TTL) {
     return res.json({ ...cached.data, fromCache: true });
   }
   
@@ -223,7 +258,7 @@ app.get('/api/trends/:keyword', async (req, res) => {
  * POST /api/gemini/insight
  * Generate AI insight for a risk metric using Gemini
  */
-app.post('/api/gemini/insight', async (req, res) => {
+app.post('/api/gemini/insight', geminiLimiter, async (req, res) => {
   const apiKey = process.env.GEMINI_API_KEY;
   
   if (!apiKey) {
@@ -239,46 +274,41 @@ app.post('/api/gemini/insight', async (req, res) => {
   if (!metric) {
     return res.status(400).json({ error: 'Metric data required' });
   }
+
+  const cacheKey = `${metric.riskDescription}-${lang}-${Math.round(metric.probability / 5) * 5}`;
+  const cached = geminiCache.get(cacheKey);
+  if (cached && Date.now() - cached.timestamp < GEMINI_CACHE_TTL) {
+    return res.json({ insight: cached.data, fromCache: true });
+  }
   
   const langNames = { pt: 'Português', en: 'English', es: 'Español' };
   
-  const prompt = `
-    Aja como o Konzup Radar, um consultor de inteligência preditiva para o mercado de turismo. 
-    DATA: Janeiro de 2026.
-    IDIOMA DA RESPOSTA: ${langNames[lang] || 'Português'}.
-    RISCO: ${metric.riskDescription}
-    MÉTRICA ATUAL: ${metric.probability}% de probabilidade.
-    TENDÊNCIA: ${metric.trend}.
-    VOLATILIDADE: ${metric.volatility}.
-
-    Forneça um "Insight Konzup": uma frase única, curta, executiva e de alto impacto para CEOs de turismo sobre a perspectiva e o impacto desse risco nas operações. 
-    Responda obrigatoriamente em ${langNames[lang] || 'Português'}.
-    Seja direto e use um tom sério de terminal financeiro.
-    IMPORTANTE: Apresente como uma análise de probabilidade, não como um fato consumado.
-    NÃO use formatação markdown como asteriscos (**). Nunca use negrito.
-    Responda APENAS com o insight, sem prefixos ou explicações.
-  `;
+  const prompt = `Konzup Radar: insight preditivo para turismo. ${langNames[lang] || 'Português'}. Risco: ${metric.riskDescription}, ${metric.probability}% prob, tendência ${metric.trend}, volatilidade ${metric.volatility}. Uma frase curta e executiva sobre o impacto no turismo. Sem markdown, sem prefixos.`;
 
   try {
     const response = await axios.post(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
       {
         contents: [{ parts: [{ text: prompt }] }],
         generationConfig: {
           temperature: 0.7,
           topP: 0.9,
-          maxOutputTokens: 200
+          maxOutputTokens: 100
         }
       },
       {
         headers: { 'Content-Type': 'application/json' },
-        timeout: 30000
+        timeout: 15000
       }
     );
 
     const text = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
     const cleanText = text?.trim().replace(/\*\*/g, '').replace(/\*/g, '') || null;
     
+    if (cleanText) {
+      geminiCache.set(cacheKey, { data: cleanText, timestamp: Date.now() });
+    }
+
     res.json({ insight: cleanText });
   } catch (error) {
     console.error('Gemini API Error:', error.response?.data || error.message);

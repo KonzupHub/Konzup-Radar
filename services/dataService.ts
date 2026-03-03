@@ -42,34 +42,45 @@ interface PolymarketMarket {
 // Cache for Polymarket events
 let polymarketEventsCache: PolymarketEvent[] = [];
 let cacheTimestamp = 0;
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+const POLYMARKET_CACHE_TTL = 2 * 60 * 60 * 1000; // 2 hours
 
 /**
- * Fetch ALL active Polymarket events
+ * Fetch ALL active Polymarket events (paginated to cover ~700 events)
  */
 async function fetchAllPolymarketEvents(): Promise<PolymarketEvent[]> {
-  // Return cached if fresh
-  if (polymarketEventsCache.length > 0 && Date.now() - cacheTimestamp < CACHE_TTL) {
+  if (polymarketEventsCache.length > 0 && Date.now() - cacheTimestamp < POLYMARKET_CACHE_TTL) {
     return polymarketEventsCache;
   }
   
   try {
-    const response = await axios.get(`${API_BASE}/api/polymarket/events`, {
-      params: {
-        active: true,
-        closed: false,
-        limit: 200 // Fetch more to find relevant events
-      },
-      timeout: 20000
-    });
+    const PAGE_SIZE = 100;
+    const MAX_PAGES = 7;
+    let allEvents: PolymarketEvent[] = [];
+
+    for (let page = 0; page < MAX_PAGES; page++) {
+      const response = await axios.get(`${API_BASE}/api/polymarket/events`, {
+        params: {
+          active: true,
+          closed: false,
+          limit: PAGE_SIZE,
+          offset: page * PAGE_SIZE
+        },
+        timeout: 15000
+      });
+
+      const events = response.data || [];
+      allEvents = allEvents.concat(events);
+
+      if (events.length < PAGE_SIZE) break;
+    }
     
-    polymarketEventsCache = response.data || [];
+    polymarketEventsCache = allEvents;
     cacheTimestamp = Date.now();
-    console.log(`📊 Polymarket: Loaded ${polymarketEventsCache.length} events`);
+    console.log(`📊 Polymarket: Loaded ${polymarketEventsCache.length} events (paginated)`);
     return polymarketEventsCache;
   } catch (error) {
     console.error('Polymarket fetch error:', error);
-    return polymarketEventsCache; // Return stale cache if available
+    return polymarketEventsCache;
   }
 }
 
@@ -305,7 +316,7 @@ const RISK_CONFIGS: RiskConfig[] = [
     name: 'Custos Aéreos LATAM',
     category: 'Custo Aéreo',
     riskDescription: 'Preço de Passagens Aéreas',
-    polymarketKeywords: ['tariffs', 'generate'], // Tarifas afetam custos
+    polymarketKeywords: ['trump', 'tariff'],
     trendsKeyword: 'passagem aerea barata',
   },
 
@@ -314,7 +325,7 @@ const RISK_CONFIGS: RiskConfig[] = [
     id: 'brl-usd',
     name: 'Câmbio Real/Dólar',
     category: 'Câmbio',
-    riskDescription: 'Desvalorização do Real',
+    riskDescription: 'Pressão sobre o Câmbio',
     polymarketKeywords: ['brazil', 'presidential'], // Eleição afeta câmbio
     trendsKeyword: 'dolar hoje viagem',
   },
@@ -395,15 +406,45 @@ const RISK_CONFIGS: RiskConfig[] = [
     trendsKeyword: 'dollar exchange rate travel',
   },
 
-  // Bloqueio China-Taiwan - Impacta rotas aéreas
   // Evento real: "Will China blockade Taiwan by June 30?"
   {
     id: 'china-blockade',
-    name: 'Bloqueio Ásia-Pacífico',
+    name: 'Bloqueio China-Taiwan',
     category: 'Custo Aéreo',
-    riskDescription: 'Risco de Bloqueio Naval Ásia',
+    riskDescription: 'Risco de Bloqueio Naval no Estreito de Taiwan',
     polymarketKeywords: ['china', 'blockade', 'taiwan'],
     trendsKeyword: 'asia flight routes',
+  },
+
+  // Evento real: "Will Iran close the Strait of Hormuz by...?" (69.2%)
+  {
+    id: 'iran-hormuz',
+    name: 'Estreito de Ormuz',
+    category: 'Custo Aéreo',
+    riskDescription: 'Fechamento do Estreito de Ormuz pelo Irã',
+    polymarketKeywords: ['iran', 'close', 'strait', 'hormuz'],
+    trendsKeyword: 'strait of hormuz oil price',
+  },
+
+  // Evento real: "1k+ container ship transits of Suez Canal in Q1 2026?" (4.4%)
+  {
+    id: 'suez-canal',
+    name: 'Canal de Suez',
+    category: 'Custo Aéreo',
+    riskDescription: 'Trânsito no Canal de Suez',
+    polymarketKeywords: ['container', 'ship', 'suez', 'canal'],
+    trendsKeyword: 'suez canal shipping',
+    invertProbability: true,
+  },
+
+  // Evento real: "Will Israel launch a major ground offensive in Lebanon by March 31?" (73.5%)
+  {
+    id: 'israel-lebanon',
+    name: 'Conflito Israel-Líbano',
+    category: 'Geopolítica',
+    riskDescription: 'Ofensiva Militar no Líbano',
+    polymarketKeywords: ['israel', 'ground', 'offensive', 'lebanon'],
+    trendsKeyword: 'lebanon travel warning',
   },
 ];
 
@@ -579,7 +620,7 @@ export function convertDiscoveredToMetric(event: DiscoveredEvent): RiskMetric {
     riskDescription: event.title,
     probability: event.probability >= 0 ? event.probability : 50,
     trend: 'stable',
-    volatility: 'medium',
+    volatility: 'moderate',
     history,
     hasRealData: true,
     polymarketSource: `🤖 Descoberto pelo Bot: ${event.discoveredAt.split('T')[0]}`
