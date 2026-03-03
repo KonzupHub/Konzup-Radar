@@ -267,7 +267,7 @@ const App: React.FC = () => {
                       <p className="text-sm text-slate-400 mt-3">{t.overrideNote}</p>
                     </div>
 
-                    {/* Two columns explanation */}
+                    {/* Four pillars explanation */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="bg-white/5 p-5 rounded-xl border border-white/10">
                         <div className="flex items-center gap-2 mb-3">
@@ -292,6 +292,32 @@ const App: React.FC = () => {
                           <li>• {t.trendsBullet2}</li>
                           <li>• {t.trendsBullet3}</li>
                           <li>• <strong className="text-cyan-400">{t.trendsBullet4}</strong></li>
+                        </ul>
+                      </div>
+
+                      <div className="bg-white/5 p-5 rounded-xl border border-amber-500/20">
+                        <div className="flex items-center gap-2 mb-3">
+                          <div className="w-3 h-3 rounded-full bg-amber-500"></div>
+                          <span className="font-bold text-white">{t.geminiWeight}</span>
+                        </div>
+                        <ul className="text-slate-400 space-y-2 text-sm">
+                          <li>• {t.geminiBullet1}</li>
+                          <li>• {t.geminiBullet2}</li>
+                          <li>• {t.geminiBullet3}</li>
+                          <li>• <strong className="text-amber-400">{t.geminiBullet4}</strong></li>
+                        </ul>
+                      </div>
+
+                      <div className="bg-white/5 p-5 rounded-xl border border-red-500/20">
+                        <div className="flex items-center gap-2 mb-3">
+                          <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                          <span className="font-bold text-white">{t.overrideTitle}</span>
+                        </div>
+                        <ul className="text-slate-400 space-y-2 text-sm">
+                          <li>• {t.overrideBullet1}</li>
+                          <li>• {t.overrideBullet2}</li>
+                          <li>• <strong className="text-red-400">{t.overrideBullet3}</strong></li>
+                          <li>• <strong className="text-red-400">{t.overrideBullet4}</strong></li>
                         </ul>
                       </div>
                     </div>
